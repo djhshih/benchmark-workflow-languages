@@ -47,7 +47,7 @@ def strip_comments(content, language):
                 if stripped.startswith('#?'):
                     result.append(line)
                 continue
-        elif language in ['cwl', 'wdl', 'ncl', 'nix']:
+        elif language in ['cwl', 'wdl', 'ncl', 'nix', 'smk']:
             if stripped.startswith('#'):
                 continue
         elif language == 'py':
@@ -183,16 +183,44 @@ def count_nickel_tokens(content):
     
     return workflow_tokens, task_tokens
 
+def count_snakemake_tokens(content):
+    """Count workflow tokens and task tokens in Snakemake."""
+    workflow_tokens = 0
+    task_tokens = 0
+    first_task = True
+    
+    for line in content.split('\n'):
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        
+        if stripped.startswith('rule '):
+            if 'all' in stripped:
+                workflow_tokens += 1
+            else:
+                if not first_task:
+                    task_tokens += 1
+                first_task = False
+        else:
+            parts = re.split(r'\s+', stripped)
+            for token in parts:
+                if token in ['rule', 'input:', 'output:', 'params:', 'resources:', 'shell:', 'run:', 'configfile:']:
+                    if token == 'configfile:':
+                        workflow_tokens += 1
+                    break
+    
+    return workflow_tokens, task_tokens
+
 def main():
     workflows = ['snv', 'cnv', 'rna']
-    languages = ['cwl', 'nf', 'wdl', 'py', 'ncl', 'swl', 'nix']
+    languages = ['cwl', 'nf', 'wdl', 'py', 'ncl', 'swl', 'nix', 'smk']
     
     results = defaultdict(lambda: {'lines': 0, 'tokens': 0, 'workflow_tokens': 0, 'task_tokens': 0, 'files': []})
     
     base_dir = Path('.')
     
-    ext_map = {'cwl': '.cwl', 'nf': '.nf', 'wdl': '.wdl', 'py': '.py', 'ncl': '.ncl', 'swl': '.swl', 'nix': '.nix'}
-    dir_map = {'cwl': 'cwl', 'nf': 'nextflow', 'wdl': 'wdl', 'py': 'python', 'ncl': 'nickel', 'swl': 'swl', 'nix': 'nix'}
+    ext_map = {'cwl': '.cwl', 'nf': '.nf', 'wdl': '.wdl', 'py': '.py', 'ncl': '.ncl', 'swl': '.swl', 'nix': '.nix', 'smk': ''}
+    dir_map = {'cwl': 'cwl', 'nf': 'nextflow', 'wdl': 'wdl', 'py': 'python', 'ncl': 'nickel', 'swl': 'swl', 'nix': 'nix', 'smk': 'snakemake'}
     
     for workflow in workflows:
         for lang in languages:
@@ -253,6 +281,10 @@ def main():
                         workflow_tokens, task_tokens = count_nickel_tokens(content_no_comments)
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                         results[(workflow, lang)]['task_tokens'] += task_tokens
+                    elif lang == 'smk':
+                        workflow_tokens, task_tokens = count_snakemake_tokens(content_no_comments)
+                        results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
+                        results[(workflow, lang)]['task_tokens'] += task_tokens
                     elif is_workflow:
                         results[(workflow, lang)]['workflow_tokens'] += tokens
                     else:
@@ -285,7 +317,7 @@ def main():
     print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_lines.values()):>7} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9}")
     print()
     
-    print("Summary by language (excluding comments, SWL '|' handled):")
+    print("Summary by language:")
     print("-" * 80)
     print(f"{'Language':<10} {'Lines':<8} {'Tokens':<10} {'WF Tokens':<12} {'Task Tokens':<12} {'Tokens/Line':<12}")
     print("-" * 80)
