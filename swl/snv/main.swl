@@ -1,0 +1,16 @@
+# SNV Calling Pipeline in SWL
+#
+# Import tool definitions
+align = import "bwa-mem.sh"
+mark_dup = import "markduplicates.sh"
+base_recal = import "baserecalibrator.sh"
+apply_recal = import "applybqsr.sh"
+haplotype = import "haplotypecaller.sh"
+variant_filt = import "variantfilter.sh"
+
+# Workflow: align -> mark_duplicates -> base_recal -> apply_recal -> haplotype -> variant_filter
+# Note: mark_duplicates is called twice (for base_recal and apply_recal)
+# We express this as a linear pipeline with the outputs properly named
+
+# Full pipeline with proper naming
+align | mark_dup | base_recal | apply_recal | haplotype | variant_filt
