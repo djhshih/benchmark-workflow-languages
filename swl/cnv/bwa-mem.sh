@@ -4,7 +4,7 @@
 # in  reference    file        | reference sequence
 # in  sample_name  str         | sample name
 #
-# out alignment    file = ${sample_name}.sam | output alignment
+# out bam    file = ${sample_name}.sam | output alignment
 #
 # run cpu    = 4
 # run memory = 8192
