@@ -1,0 +1,85 @@
+configfile: "config.yaml"
+
+rule all:
+    input:
+        "variants.filtered.vcf"
+
+rule bwa_mem:
+    input:
+        reads=lambda wildcards: config["reads"],
+        reference=config["reference"]
+    output:
+        "alignment.sam"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=1024
+    shell:
+        "bwa mem -t {resources.cpu} {input.reference} {input.reads[0]} {input.reads[1]} > {output}"
+
+rule mark_duplicates:
+    input:
+        "alignment.sam"
+    output:
+        "deduped.bam"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "java -jar picard.jar MarkDuplicates I={input} O={output} M=metrics.txt"
+
+rule base_recalibrator:
+    input:
+        bam="deduped.bam",
+        reference=config["reference"]
+    output:
+        "recal.table"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    params:
+        known_sites=config.get("known_sites", [])
+    shell:
+        "java -jar gatk BaseRecalibrator -I {input.bam} -R {input.reference} -O {output}"
+
+rule apply_bqsr:
+    input:
+        bam="deduped.bam",
+        recal_table="recal.table",
+        reference=config["reference"]
+    output:
+        "recalibrated.bam"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "java -jar gatk ApplyBQSR -I {input.bam} -R {input.reference} --bqsr-recal-file {input.recal_table} -O {output}"
+
+rule haplotype_caller:
+    input:
+        bam="recalibrated.bam",
+        reference=config["reference"]
+    output:
+        "variants.g.vcf"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=1024
+    shell:
+        "java -jar gatk HaplotypeCaller -I {input.bam} -R {input.reference} -O {output}"
+
+rule variant_filter:
+    input:
+        variants="variants.g.vcf",
+        reference=config["reference"]
+    output:
+        "variants.filtered.vcf"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=1024
+    shell:
+        "java -jar gatk VariantRecalibrator -V {input.variants} -R {input.reference} -O {output}"

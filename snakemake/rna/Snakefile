@@ -1,0 +1,56 @@
+configfile: "config.yaml"
+
+rule all:
+    input:
+        "counts.txt"
+
+rule trimmomatic:
+    input:
+        reads=lambda wildcards: config["reads"],
+        adapters=config["adapters"]
+    output:
+        trimmed=["trimmed_R1.fastq.gz", "trimmed_R2.fastq.gz"]
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "java -jar trimmomatic.jar PE {input.reads[0]} {input.reads[1]} {output.trimmed[0]} {output.trimmed[1]} ILLUMINACLIP:{input.adapters}:2:30:10"
+
+rule star:
+    input:
+        reads=lambda wildcards: ["trimmed_R1.fastq.gz", "trimmed_R2.fastq.gz"],
+        reference_index=config["reference_index"]
+    output:
+        "alignment.bam"
+    resources:
+        cpu=8,
+        mem_mb=32768,
+        disk_mb=10240
+    shell:
+        "STAR --runMode alignReads --runThreadN {resources.cpu} --genomeDir {input.reference_index} --readFilesIn {input.reads[0]} {input.reads[1]} --outFileNamePrefix ./"
+
+rule fastqc:
+    input:
+        reads=lambda wildcards: ["trimmed_R1.fastq.gz", "trimmed_R2.fastq.gz"]
+    output:
+        expand("trimmed_{i}_fastqc.html", i=[1, 2])
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=512
+    shell:
+        "fastqc --outdir . {input.reads[0]} {input.reads[1]}"
+
+rule featurecounts:
+    input:
+        alignment="alignment.bam",
+        annotation=config["annotation"]
+    output:
+        "counts.txt"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=1024
+    shell:
+        "featureCounts -T {resources.cpu} -a {input.annotation} -o {output} {input.alignment}"

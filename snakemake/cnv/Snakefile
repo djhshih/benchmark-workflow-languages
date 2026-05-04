@@ -1,0 +1,104 @@
+configfile: "config.yaml"
+
+rule all:
+    input:
+        "cnv.vcf"
+
+rule bwa_mem:
+    input:
+        reads=lambda wildcards: config["reads"],
+        reference=config["reference"]
+    output:
+        "alignment.sam"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=1024
+    shell:
+        "bwa mem -t {resources.cpu} {input.reference} {input.reads[0]} {input.reads[1]} > {output}"
+
+rule sort_bam:
+    input:
+        "alignment.sam"
+    output:
+        "sorted.bam"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "samtools sort -@ {resources.cpu} {input} -o {output}"
+
+rule index_bam:
+    input:
+        "sorted.bam"
+    output:
+        "sorted.bam.bai"
+    resources:
+        cpu=1,
+        mem_mb=2048,
+        disk_mb=512
+    shell:
+        "samtools index {input}"
+
+rule collect_readcounts:
+    input:
+        bam="sorted.bam",
+        reference=config["reference"]
+    output:
+        "readcounts.tsv"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "gatk CollectReadCounts -I {input.bam} -R {input.reference} -O {output}"
+
+rule collect_gc:
+    input:
+        reference=config["reference"]
+    output:
+        "gc.tsv"
+    resources:
+        cpu=1,
+        mem_mb=2048,
+        disk_mb=512
+    shell:
+        "gatk CountGC -R {input.reference} -O {output}"
+
+rule denoise_coverage:
+    input:
+        readcounts="readcounts.tsv",
+        gc="gc.tsv"
+    output:
+        "denoised.tsv"
+    resources:
+        cpu=4,
+        mem_mb=8192,
+        disk_mb=2048
+    shell:
+        "gatk DenoiseReadCounts --readcounts {input.readcounts} --gc-hdf5 {input.gc} --output-prefix prefix"
+
+rule segment_cnv:
+    input:
+        "denoised.tsv"
+    output:
+        "segments.tsv"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "gatk SegmentDenoisedCopyRatios --denoised {input} -O {output}"
+
+rule call_cnv:
+    input:
+        "segments.tsv"
+    output:
+        "cnv.vcf"
+    resources:
+        cpu=2,
+        mem_mb=4096,
+        disk_mb=1024
+    shell:
+        "gatk ModelSegments --segments {input} -O {output}"
