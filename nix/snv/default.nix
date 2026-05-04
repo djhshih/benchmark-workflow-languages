@@ -1,65 +1,45 @@
+{ pkgs ? import <nixpkgs> {} }:
+
 let
-  Resource = {
-    cpu | Number,
-    memory | Number,
-    disk | Number,
+  Resource = { cpu, memory, disk }: {
+    inherit cpu memory disk;
   };
 
-  TaskDef = {
-    name | String,
-    command | String,
-    inputs | {_: Dyn},
-    outputs | {_: Dyn},
-    resources | Resource,
+  Task = name: command: inputs: outputs: resources: {
+    inherit name command inputs outputs resources;
   };
 
-  Task = fun name => fun command => fun inputs => fun outputs => fun resources =>
-    {
-      name,
-      command,
-      inputs,
-      outputs,
-      resources,
-    }
-  in
-
-  bwa_mem = Task
-    "bwa-mem"
-    "bwa mem -t ${to_string resources.cpu} ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]}"
+  bwa_mem = Task "bwa-mem"
+    "bwa mem -t ${toString resources.cpu} ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]}"
     { reads = "array"; reference = "file"; sample_name = "string"; }
     { alignment = "*.sam"; }
     { cpu = 4; memory = 8192; disk = 1024; };
 
-  markduplicates = Task
-    "markduplicates"
+  markduplicates = Task "markduplicates"
     "java -jar picard.jar MarkDuplicates I=${inputs.alignment} O=deduped.bam M=metrics.txt"
     { alignment = "file"; sample_name = "string"; }
     { deduped_bam = "*.bam"; metrics = "*.txt"; }
     { cpu = 2; memory = 4096; disk = 1024; };
 
-  baserecalibrator = Task
-    "baserecalibrator"
+  baserecalibrator = Task "baserecalibrator"
     "java -jar gatk BaseRecalibrator -I ${inputs.input} -R ${inputs.reference} -O recal.table"
     { input = "file"; reference = "file"; known_sites = "array"; }
     { recal_table = "*.table"; report = "*.txt"; }
     { cpu = 2; memory = 4096; disk = 1024; };
 
-  applybqsr = Task
-    "applybqsr"
+  applybqsr = Task "applybqsr"
     "java -jar gatk ApplyBQSR -I ${inputs.input} -R ${inputs.reference} --bqsr-recal-file ${inputs.recal_table} -O recalibrated.bam"
     { input = "file"; recal_table = "file"; reference = "file"; }
     { recalibrated_bam = "*.bam"; }
     { cpu = 2; memory = 4096; disk = 1024; };
 
-  haplotypecaller = Task
-    "haplotypecaller"
+  haplotypecaller = Task "haplotypecaller"
     "java -jar gatk HaplotypeCaller -I ${inputs.input} -R ${inputs.reference} -O variants.g.vcf"
     { input = "file"; reference = "file"; }
     { variants = "*.vcf"; }
     { cpu = 4; memory = 8192; disk = 1024; };
 
-  variantfilter = Task
-    "variantfilter"
+  variantfilter = Task "variantfilter"
     "java -jar gatk VariantRecalibrator -V ${inputs.variants} -R ${inputs.reference} -O filtered.vcf"
     { variants = "file"; reference = "file"; }
     { filtered_variants = "*.vcf"; }
@@ -103,7 +83,7 @@ in {
         known_sites = "known_sites";
       };
     };
-    apply = {
+    applybqsr = {
       task = "applybqsr";
       inputs = {
         input = "markdup.deduped_bam";
@@ -114,7 +94,7 @@ in {
     haplotype = {
       task = "haplotypecaller";
       inputs = {
-        input = "apply.recalibrated_bam";
+        input = "applybqsr.recalibrated_bam";
         reference = "reference";
       };
     };

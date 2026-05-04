@@ -1,14 +1,14 @@
 #? Base Recalibrator
-#
-# in  input       file        | input bam
-# in  reference   file        | reference sequence
-# in  known_sites array file  | known variant sites
-#
-# out recal_table file = recal.table | recal table
-# out report     file = report.txt   | report
-#
-# run cpu    = 2
-# run memory = 4096
-# run disk   = 1024
+# in
+#   input file | input BAM
+#   reference file | reference genome
+#   known_sites array | known variant sites
+# out
+#   recal_table file = recal.table | recalibration table
+#   report file = report.txt | recalibration report
+# run
+#   cpu = 2
+#   memory = 4096
+#   disk = 1024
 
-java -jar gatk BaseRecalibrator -I ${input} -R ${reference} --known-sites ${known_sites[0]} -O recal.table -BQSR report.txt
+java -jar gatk BaseRecalibrator -I ${input} -R ${reference} --known-sites ${known_sites[0]} --known-sites ${known_sites[1]} -O recal.table -BQSR report.txt

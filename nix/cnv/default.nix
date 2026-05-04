@@ -1,3 +1,5 @@
+{ pkgs ? import <nixpkgs> {} }:
+
 let
   Task = name: command: inputs: outputs: resources: {
     inherit name command inputs outputs resources;

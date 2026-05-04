@@ -8,12 +8,9 @@ params.reference_fai = null
 params.known_sites = []
 
 process BWA_MEM {
+    #? disk = 1024
     cpus 4
     memory '8 GB'
-    # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-    # WDL equivalent: cpu: 4, memory: "8 GB"
-    # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-    # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     
     input:
         tuple val(sample), path(reads)
@@ -28,12 +25,9 @@ process BWA_MEM {
 }
 
 process MARK_DUPLICATES {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path alignment
@@ -49,12 +43,9 @@ process MARK_DUPLICATES {
 }
 
 process BASE_RECALIBRATOR {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path input_bam
@@ -74,12 +65,9 @@ process BASE_RECALIBRATOR {
 }
 
 process APPLY_BQSR {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path input_bam
@@ -95,12 +83,9 @@ process APPLY_BQSR {
 }
 
 process HAPLOTYPE_CALLER {
+    #? disk = 1024
     cpus 4
     memory '8 GB'
-    # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-    # WDL equivalent: cpu: 4, memory: "8 GB"
-    # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-    # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     
     input:
         path input_bam
@@ -117,12 +102,9 @@ process HAPLOTYPE_CALLER {
 }
 
 process VARIANT_FILTER {
+    #? disk = 1024
     cpus 4
     memory '8 GB'
-    # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-    # WDL equivalent: cpu: 4, memory: "8 GB"
-    # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-    # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     
     input:
         path variants

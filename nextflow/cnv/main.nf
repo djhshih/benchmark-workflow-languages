@@ -7,12 +7,9 @@ params.target_regions = null
 params.reference_panel = []
 
 process BWA_MEM {
+    #? disk = 1024
     cpus 4
     memory '8 GB'
-    # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-    # WDL equivalent: cpu: 4, memory: "8 GB"
-    # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-    # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     
     input:
         tuple val(sample), path(reads)
@@ -27,12 +24,9 @@ process BWA_MEM {
 }
 
 process SORT_BAM {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path alignment
@@ -46,12 +40,9 @@ process SORT_BAM {
 }
 
 process INDEX_BAM {
+    #? disk = 512
     cpus 1
     memory '2 GB'
-    # CWL equivalent: coresMin: 1, ramMin: 2048, outdirMin: 1024
-    # WDL equivalent: cpu: 1, memory: "2 GB"
-    # Python equivalent: cpu=1, memory_mb=2048, disk_mb=1024
-    # Nickel equivalent: cpu = 1, memory = 2048, disk = 1024
     
     input:
         path bam
@@ -65,12 +56,9 @@ process INDEX_BAM {
 }
 
 process COLLECT_READ_COUNTS {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path bam
@@ -86,12 +74,9 @@ process COLLECT_READ_COUNTS {
 }
 
 process COLLECT_GC {
+    #? disk = 512
     cpus 1
     memory '2 GB'
-    # CWL equivalent: coresMin: 1, ramMin: 2048, outdirMin: 1024
-    # WDL equivalent: cpu: 1, memory: "2 GB"
-    # Python equivalent: cpu=1, memory_mb=2048, disk_mb=1024
-    # Nickel equivalent: cpu = 1, memory = 2048, disk = 1024
     
     input:
         path reference
@@ -106,12 +91,9 @@ process COLLECT_GC {
 }
 
 process DENOISE_COVERAGE {
+    #? disk = 2048
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path counts
@@ -128,12 +110,9 @@ process DENOISE_COVERAGE {
 }
 
 process SEGMENT_CNV {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path denoised_cr
@@ -148,12 +127,9 @@ process SEGMENT_CNV {
 }
 
 process CALL_CNV {
+    #? disk = 1024
     cpus 2
     memory '4 GB'
-    # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-    # WDL equivalent: cpu: 2, memory: "4 GB"
-    # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-    # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     
     input:
         path segments
