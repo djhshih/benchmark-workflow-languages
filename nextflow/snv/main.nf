@@ -8,9 +8,9 @@ params.reference_fai = null
 params.known_sites = []
 
 process BWA_MEM {
-    #? disk = 1024
     cpus 4
     memory '8 GB'
+    disk '1 GB'
     
     input:
         tuple val(sample), path(reads)
@@ -25,9 +25,9 @@ process BWA_MEM {
 }
 
 process MARK_DUPLICATES {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path alignment
@@ -43,9 +43,9 @@ process MARK_DUPLICATES {
 }
 
 process BASE_RECALIBRATOR {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path input_bam
@@ -65,9 +65,9 @@ process BASE_RECALIBRATOR {
 }
 
 process APPLY_BQSR {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path input_bam
@@ -83,9 +83,9 @@ process APPLY_BQSR {
 }
 
 process HAPLOTYPE_CALLER {
-    #? disk = 1024
     cpus 4
     memory '8 GB'
+    disk '1 GB'
     
     input:
         path input_bam
@@ -102,9 +102,9 @@ process HAPLOTYPE_CALLER {
 }
 
 process VARIANT_FILTER {
-    #? disk = 1024
     cpus 4
     memory '8 GB'
+    disk '1 GB'
     
     input:
         path variants

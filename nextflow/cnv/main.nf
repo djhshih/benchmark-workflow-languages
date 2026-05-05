@@ -7,9 +7,9 @@ params.target_regions = null
 params.reference_panel = []
 
 process BWA_MEM {
-    #? disk = 1024
     cpus 4
     memory '8 GB'
+    disk '1 GB'
     
     input:
         tuple val(sample), path(reads)
@@ -24,9 +24,9 @@ process BWA_MEM {
 }
 
 process SORT_BAM {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path alignment
@@ -40,9 +40,9 @@ process SORT_BAM {
 }
 
 process INDEX_BAM {
-    #? disk = 512
     cpus 1
     memory '2 GB'
+    disk '512 MB'
     
     input:
         path bam
@@ -56,9 +56,9 @@ process INDEX_BAM {
 }
 
 process COLLECT_READ_COUNTS {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path bam
@@ -74,9 +74,9 @@ process COLLECT_READ_COUNTS {
 }
 
 process COLLECT_GC {
-    #? disk = 512
     cpus 1
     memory '2 GB'
+    disk '512 MB'
     
     input:
         path reference
@@ -91,9 +91,9 @@ process COLLECT_GC {
 }
 
 process DENOISE_COVERAGE {
-    #? disk = 2048
     cpus 2
     memory '4 GB'
+    disk '2 GB'
     
     input:
         path counts
@@ -110,9 +110,9 @@ process DENOISE_COVERAGE {
 }
 
 process SEGMENT_CNV {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path denoised_cr
@@ -127,9 +127,9 @@ process SEGMENT_CNV {
 }
 
 process CALL_CNV {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
     
     input:
         path segments

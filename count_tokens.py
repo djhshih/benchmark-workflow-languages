@@ -162,7 +162,7 @@ def get_token_list(content, language):
                         pass
             else:
                 # Non-comment line - process normally
-                parts = re.split(r'(\s+|[=,:{}\[\]()"])', line)
+                parts = re.split(r"(\s+|[=,:{}\[\]()\"'])", line)
                 tokens.extend([t for t in parts if t and t.strip()])
             
             i += 1
@@ -180,7 +180,7 @@ def get_token_list(content, language):
                     tokens.append('[indent]')
             # Split on whitespace AND punctuation to count each punctuation as a token
             # Include quotes and dots as separate tokens
-            parts = re.split(r'(\s+|[=,:{}\[\]()".])', line)
+            parts = re.split(r"(\s+|[=,:{}\[\]()\"'.])", line)
             tokens.extend([t for t in parts if t and t.strip()])
     
     return tokens

@@ -6,9 +6,9 @@ params.reference_index = null
 params.annotation = null
 
 process TRIMMOMATIC {
-    #? disk = 1024
     cpus 2
     memory '4 GB'
+    disk '1 GB'
 
     input:
         tuple val(sample), path(reads)
@@ -28,9 +28,9 @@ process TRIMMOMATIC {
 }
 
 process STAR_ALIGN {
-    #? disk = 10240
     cpus 8
     memory '32 GB'
+    disk '10 GB'
 
     input:
         path reads
@@ -48,9 +48,9 @@ process STAR_ALIGN {
 }
 
 process FASTQC {
-    #? disk = 512
     cpus 2
     memory '4 GB'
+    disk '512 MB'
 
     input:
         path reads
@@ -59,14 +59,14 @@ process FASTQC {
         path "*.html", emit: reports
     
     """
-    fastqc --outdir . ${reads.join(' ')}
+    fastqc --outdir . ${reads[0]} ${reads[1]}
     """
 }
 
 process FEATURECOUNTS {
-    #? disk = 1024
     cpus 4
     memory '8 GB'
+    disk '1 GB'
 
     input:
         path alignment
@@ -86,12 +86,12 @@ workflow {
     adapters = file(params.adapters)
     reference_index = file(params.reference_index)
     annotation = file(params.annotation)
-
+    
     TRIMMOMATIC(reads, adapters)
-    STAR_ALIGN(TRIMMOMATIC.out.trimmed_reads.collect(), reference_index)
-    FASTQC(TRIMMOMATIC.out.trimmed_reads.collect())
-    FEATURECOUNTS(STAR_ALIGN.out.alignment.first(), annotation)
-
+    STAR_ALIGN(TRIMMOMATIC.out.trimmed_reads, reference_index)
+    FASTQC(TRIMMOMATIC.out.trimmed_reads)
+    FEATURECOUNTS(STAR_ALIGN.out.alignment, annotation)
+    
     emit:
         counts = FEATURECOUNTS.out.counts
         reports = FASTQC.out.reports
