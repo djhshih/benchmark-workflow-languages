@@ -491,11 +491,108 @@ def count_snakemake_tokens(content):
     
     return wf_tokens, task_tokens
 
+def extract_bash_tokens(content, language):
+    """Extract bash/shell command tokens from task definitions."""
+    if language == 'cwl':
+        return 0
+    
+    lines = content.split('\n')
+    bash_lines = []
+    in_bash = False
+    
+    if language == 'swl':
+        for line in lines:
+            if not line.strip():
+                continue
+            if line.startswith('#') and any(kw in line for kw in ['#?', '# in', '# out', '# run']):
+                continue
+            if line.strip():
+                bash_lines.append(line)
+        return len(get_token_list('\n'.join(bash_lines), 'swl'))
+    
+    if language == 'nf':
+        in_triple = False
+        triple_char = None
+        for line in lines:
+            if not in_triple:
+                if '"""' in line or "'''" in line:
+                    in_triple = True
+                    triple_char = '"""' if '"""' in line else "'''"
+                    if line.strip().count(triple_char) >= 2:
+                        continue
+            else:
+                if triple_char in line and line.strip().count(triple_char) >= 1:
+                    in_triple = False
+                    continue
+                if line.strip():
+                    bash_lines.append(line)
+        return len(get_token_list('\n'.join(bash_lines), 'nf'))
+    
+    if language == 'wdl':
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith('command'):
+                in_bash = True
+                j = i + 1
+                while j < len(lines):
+                    if '>>>' in lines[j]:
+                        break
+                    if lines[j].strip() and not lines[j].strip().startswith('>'):
+                        bash_lines.append(lines[j])
+                    j += 1
+        return len(get_token_list('\n'.join(bash_lines), 'wdl'))
+    
+    if language == 'py':
+        in_tool = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('TOOLS'):
+                in_tool = True
+            if in_tool and 'base_command=' in stripped:
+                parts = stripped.split('base_command=')
+                if len(parts) > 1:
+                    cmd_part = parts[1].rstrip(',').strip('"').strip("'")
+                    bash_lines.append(cmd_part)
+        return len(get_token_list('\n'.join(bash_lines), 'py'))
+    
+    if language == 'ncl' or language == 'nix':
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.endswith('Task') or '=' in stripped and 'Task' in stripped:
+                j = i + 1
+                quote_count = 0
+                while j < len(lines) and quote_count < 2:
+                    if '"' in lines[j]:
+                        quote_count += lines[j].count('"') // 2
+                        if quote_count >= 2:
+                            import re
+                            quotes = re.findall(r'"([^"]*)"', '\n'.join(lines[i:j+1]))
+                            if len(quotes) >= 2:
+                                bash_lines.append(quotes[1])
+                            break
+                    j += 1
+        return len(get_token_list('\n'.join(bash_lines), language))
+    
+    if language == 'smk':
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith('shell:'):
+                j = i
+                while j < len(lines):
+                    if lines[j].strip() and not lines[j].strip().startswith('shell:'):
+                        if lines[j].strip().startswith('rule ') or lines[j].strip().startswith('input:') or lines[j].strip().startswith('output:') or lines[j].strip().startswith('resources:') or lines[j].strip().startswith('params:') or lines[j].strip().startswith('name:'):
+                            break
+                        bash_lines.append(lines[j])
+                    j += 1
+        return len(get_token_list('\n'.join(bash_lines), 'smk'))
+    
+    return 0
+
 def main():
     workflows = ['snv', 'cnv', 'rna']
     languages = ['cwl', 'nf', 'wdl', 'py', 'ncl', 'swl', 'nix', 'smk']
     
-    results = defaultdict(lambda: {'lines': 0, 'tokens': 0, 'workflow_tokens': 0, 'task_tokens': 0, 'files': [], 'token_lists': {}})
+    results = defaultdict(lambda: {'lines': 0, 'tokens': 0, 'workflow_tokens': 0, 'task_tokens': 0, 'bash_tokens': 0, 'files': [], 'token_lists': {}})
     
     base_dir = Path('.')
     
@@ -517,24 +614,27 @@ def main():
                     content_no_comments = strip_comments(content, lang)
                     token_list = get_token_list(content_no_comments, lang)
                     workflow_tokens, task_tokens = count_py_tokens(content_no_comments)
+                    bash_tokens = extract_bash_tokens(content_no_comments, 'py')
                     tokens = workflow_tokens + task_tokens
                     results[(workflow, lang)]['lines'] += len(content_no_comments.split('\n'))
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
-                    results[(workflow, lang)]['task_tokens'] += task_tokens
+                    results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
+                    results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     results[(workflow, lang)]['files'].append(str(py_file))
                     results[(workflow, lang)]['token_lists'][str(py_file)] = token_list
             elif lang == 'swl':
                 for sh_file in sorted(lang_dir.glob('*.sh')):
                     with open(sh_file, 'r') as f:
                         content = f.read()
-                    # Don't strip comments for SWL - get_token_list handles it
                     token_list = get_token_list(content, 'swl')
                     tokens = len(token_list)
+                    bash_tokens = extract_bash_tokens(content, 'swl')
                     results[(workflow, lang)]['files'].append(str(sh_file))
                     results[(workflow, lang)]['lines'] += len(content.split('\n'))
                     results[(workflow, lang)]['tokens'] += tokens
-                    results[(workflow, lang)]['task_tokens'] += tokens
+                    results[(workflow, lang)]['task_tokens'] += tokens - bash_tokens
+                    results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     results[(workflow, lang)]['token_lists'][str(sh_file)] = token_list
                 
                 for swl_file in sorted(lang_dir.glob('*.swl')):
@@ -558,30 +658,41 @@ def main():
                     
                     if lang == 'nf':
                         workflow_tokens, task_tokens = count_nf_tokens(content_no_comments)
+                        bash_tokens = extract_bash_tokens(content_no_comments, 'nf')
                         tokens = workflow_tokens + task_tokens
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
-                        results[(workflow, lang)]['task_tokens'] += task_tokens
+                        results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
+                        results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     elif lang == 'wdl':
                         workflow_tokens, task_tokens = count_wdl_tokens(content_no_comments)
+                        bash_tokens = extract_bash_tokens(content_no_comments, 'wdl')
                         tokens = workflow_tokens + task_tokens
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
-                        results[(workflow, lang)]['task_tokens'] += task_tokens
+                        results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
+                        results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     elif lang == 'ncl' or lang == 'nix':
                         workflow_tokens, task_tokens = count_nickel_tokens(content_no_comments)
+                        bash_tokens = extract_bash_tokens(content_no_comments, lang)
                         tokens = workflow_tokens + task_tokens
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
-                        results[(workflow, lang)]['task_tokens'] += task_tokens
+                        results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
+                        results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     elif lang == 'smk':
                         workflow_tokens, task_tokens = count_snakemake_tokens(content_no_comments)
+                        bash_tokens = extract_bash_tokens(content_no_comments, 'smk')
                         tokens = workflow_tokens + task_tokens
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
-                        results[(workflow, lang)]['task_tokens'] += task_tokens
+                        results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
+                        results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     elif is_workflow:
                         tokens = len(token_list)
                         results[(workflow, lang)]['workflow_tokens'] += tokens
+                        results[(workflow, lang)]['bash_tokens'] += 0
                     else:
                         tokens = len(token_list)
-                        results[(workflow, lang)]['task_tokens'] += tokens
+                        bash_tokens = extract_bash_tokens(content_no_comments, lang)
+                        results[(workflow, lang)]['task_tokens'] += tokens - bash_tokens
+                        results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     
                     results[(workflow, lang)]['files'].append(str(file_path))
                     results[(workflow, lang)]['lines'] += len(content_no_comments.split('\n'))
@@ -591,12 +702,13 @@ def main():
     print("")
     print("INDIVIDUAL WORKFLOWS")
     print("-" * 98)
-    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9} {'Lines':>7}")
+    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Lines':>7} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9} {'Bash':>8}")
     print("-" * 98)
     
     total_tokens = defaultdict(int)
     total_wf = defaultdict(int)
     total_tools = defaultdict(int)
+    total_bash = defaultdict(int)
     total_lines = defaultdict(int)
     
     for workflow in workflows:
@@ -605,24 +717,25 @@ def main():
             data = results[key]
             if data['files']:
                 file_count = len(data['files'])
-                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9} {data['lines']:>7}")
+                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['lines']:>7} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9} {data['bash_tokens']:>8}")
                 total_lines[lang] += data['lines']
                 total_tokens[lang] += data['tokens']
                 total_wf[lang] += data['workflow_tokens']
                 total_tools[lang] += data['task_tokens']
+                total_bash[lang] += data['bash_tokens']
     
     print("-" * 98)
-    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9} {sum(total_lines.values()):>7}")
+    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_lines.values()):>7} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9} {sum(total_bash.values()):>8}")
     print()
     
     print("Summary by language:")
     print("-" * 80)
-    print(f"{'Language':<10} {'Tokens':<10} {'WF Tokens':<12} {'Task Tokens':<12} {'Lines':<8} {'Tokens/Line':<12}")
+    print(f"{'Language':<10} {'Lines':<8} {'Tokens':<10} {'Bash Tok':<10} {'WF Tok':<10} {'Task Tok':<10} {'Non-Bash':<10}")
     print("-" * 80)
     for lang in languages:
         if total_tokens[lang] > 0:
-            tokens_per_line = total_tokens[lang] / total_lines[lang] if total_lines[lang] > 0 else 0
-            print(f"{lang:<10} {total_tokens[lang]:<10} {total_wf[lang]:<12} {total_tools[lang]:<12} {total_lines[lang]:<8} {tokens_per_line:<12.2f}")
+            non_bash = total_tokens[lang] - total_bash[lang]
+            print(f"{lang:<10} {total_lines[lang]:<8} {total_tokens[lang]:<10} {total_bash[lang]:<10} {total_wf[lang]:<10} {total_tools[lang]:<10} {non_bash:<10}")
 
     # Print comprehensive token lists for each language
     print()
