@@ -591,7 +591,7 @@ def main():
     print("")
     print("INDIVIDUAL WORKFLOWS")
     print("-" * 98)
-    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Lines':>7} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9}")
+    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9} {'Lines':>7}")
     print("-" * 98)
     
     total_tokens = defaultdict(int)
@@ -605,24 +605,24 @@ def main():
             data = results[key]
             if data['files']:
                 file_count = len(data['files'])
-                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['lines']:>7} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9}")
+                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9} {data['lines']:>7}")
                 total_lines[lang] += data['lines']
                 total_tokens[lang] += data['tokens']
                 total_wf[lang] += data['workflow_tokens']
                 total_tools[lang] += data['task_tokens']
     
     print("-" * 98)
-    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_lines.values()):>7} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9}")
+    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9} {sum(total_lines.values()):>7}")
     print()
     
     print("Summary by language:")
     print("-" * 80)
-    print(f"{'Language':<10} {'Lines':<8} {'Tokens':<10} {'WF Tokens':<12} {'Task Tokens':<12} {'Tokens/Line':<12}")
+    print(f"{'Language':<10} {'Tokens':<10} {'WF Tokens':<12} {'Task Tokens':<12} {'Lines':<8} {'Tokens/Line':<12}")
     print("-" * 80)
     for lang in languages:
         if total_tokens[lang] > 0:
             tokens_per_line = total_tokens[lang] / total_lines[lang] if total_lines[lang] > 0 else 0
-            print(f"{lang:<10} {total_lines[lang]:<8} {total_tokens[lang]:<10} {total_wf[lang]:<12} {total_tools[lang]:<12} {tokens_per_line:<12.2f}")
+            print(f"{lang:<10} {total_tokens[lang]:<10} {total_wf[lang]:<12} {total_tools[lang]:<12} {total_lines[lang]:<8} {tokens_per_line:<12.2f}")
 
     # Print comprehensive token lists for each language
     print()
