@@ -6,18 +6,19 @@ This directory compares languages for defining bioinformatics pipelines that can
 
 | Language | Total Tokens | Files | Lines | Tokens/Line |
 |----------|-------------|-------|-------|-------------|
-| **Nickel** | 1447 | 3 | 414 | 3.50 |
+| **Nickel** | 1180 | 3 | 296 | 3.99 |
+| **Nix** | 1170 | 3 | 278 | 4.21 |
+| **CWL** | 1187 | 21 | 665 | 1.78 |
 | **WDL** | 1034 | 3 | 425 | 2.43 |
-| **Nix** | 861 | 3 | 149 | 5.78 |
-| **SWL** | 782 | 21 | 183 | 4.27 |
 | **Python DSL** | 766 | 3 | 285 | 2.69 |
 | **Nextflow** | 826 | 3 | 317 | 2.61 |
-| **CWL** | 1187 | 21 | 665 | 1.78 |
+| **SWL** | 660 | 21 | 156 | 4.23 |
+| **Snakemake** | 391 | 3 | 224 | 1.75 |
 
 ## Pipelines
 
 - **SNV Calling**: 6 steps (BWA → MarkDuplicates → BaseRecalibrator → ApplyBQSR → HaplotypeCaller → VariantFilter)
-- **CNV Calling**: 8 steps (BWA → SortBAM → IndexBAM → CollectReadCounts → CollectGC → DenoiseCoverage → SegmentCNV → CallCNV)
+- **CNV Calling**: 8 steps (BWA → SortBAM → IndexBAM → CollectReadCounts → CountGC → DenoiseReadCounts → SegmentDenoisedCopyRatios → ModelSegments)
 - **RNA-seq**: 4 steps (Trimmomatic → STAR → FastQC → featureCounts)
 
 ## Language Details
@@ -31,6 +32,7 @@ This directory compares languages for defining bioinformatics pipelines that can
 | **Nickel** | 1 | Pure configuration language, generates CWL |
 | **Nix** | 1 | Nix expression language, generates CWL |
 | **SWL** | 5-9 | Shell Workflow Language - annotated shell scripts with pipe composition |
+| **Snakemake** | 1 | Python-based DSL, rule-based workflow definition |
 
 ## Run Token Counter
 
@@ -43,5 +45,5 @@ python3 count_tokens.py
 | File | Description |
 |------|-------------|
 | `count_tokens.py` | Script that counts non-comment lines and tokens |
-| `comparison.md` | Full analysis with realistic code examples |
-| `cwl/`, `nextflow/`, `wdl/`, `python/`, `nickel/`, `nix/`, `swl/` | Language-specific implementations |
+| `comparison.md` | Full analysis with token counts |
+| `cwl/`, `nextflow/`, `wdl/`, `python/`, `nickel/`, `nix/`, `swl/`, `snakemake/` | Language-specific implementations |

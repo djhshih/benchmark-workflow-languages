@@ -24,31 +24,31 @@ let
     { cpu = 1; memory = 2048; disk = 512; };
 
   collect_readcounts = Task "collect-readcounts"
-    "python collectreadcounts.py -I ${inputs.bam} -R ${inputs.reference} -o readcounts.hdf5"
+    "gatk CollectReadCounts -I ${inputs.bam} -R ${inputs.reference} -O readcounts.tsv"
     { bam = "file"; reference = "file"; }
-    { readcounts = "*.hdf5"; }
+    { readcounts = "*.tsv"; }
     { cpu = 2; memory = 4096; disk = 1024; };
 
   collect_gc = Task "collect-gc"
-    "python collectgc.py -R ${inputs.reference} -o gc.hdf5"
+    "gatk CountGC -R ${inputs.reference} -O gc.tsv"
     { reference = "file"; }
-    { gc = "*.hdf5"; }
+    { gc = "*.tsv"; }
     { cpu = 1; memory = 2048; disk = 512; };
 
   denoise_coverage = Task "denoise-coverage"
-    "python denoisecoverage.py --readcounts ${inputs.readcounts} --gc ${inputs.gc} --output prefix"
+    "gatk DenoiseReadCounts --readcounts ${inputs.readcounts} --gc-hdf5 ${inputs.gc} --output-prefix prefix"
     { readcounts = "file"; gc = "file"; }
-    { denoised = "*_denoised.hdf5"; }
+    { denoised = "*_denoised_cr.tsv"; }
     { cpu = 4; memory = 8192; disk = 2048; };
 
   segment_cnv = Task "segment-cnv"
-    "python segmentcnv.py --denoised ${inputs.denoised} -o segments.hdf5"
+    "gatk SegmentDenoisedCopyRatios --denoised ${inputs.denoised} -O segments.tsv"
     { denoised = "file"; }
-    { segments = "*.hdf5"; }
+    { segments = "*.tsv"; }
     { cpu = 2; memory = 4096; disk = 1024; };
 
   call_cnv = Task "call-cnv"
-    "python callcnv.py --segments ${inputs.segments} -o cnv.vcf"
+    "gatk ModelSegments --segments ${inputs.segments} -O cnv.vcf"
     { segments = "file"; }
     { cnv = "*.vcf"; }
     { cpu = 2; memory = 4096; disk = 1024; };

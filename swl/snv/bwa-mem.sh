@@ -1,7 +1,7 @@
 #? BWA MEM alignment
 # in
 #   reads array file | paired-end reads
-#   reference file | reference sequence
+#   reference file  | reference sequence
 #   sample_name str | sample name
 # out
 #   alignment file = ${sample_name}.sam | output alignment
