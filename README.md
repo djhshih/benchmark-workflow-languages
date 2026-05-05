@@ -39,6 +39,11 @@ This directory compares languages for defining bioinformatics pipelines that can
 | **SWL** | 5-9 | Shell Workflow Language - .swl files = workflow, .sh files = tasks |
 | **Snakemake** | 1 | Python-based DSL, rule-based (rule all + configfile vs other rules) |
 
+See the [nixflow][nixflow] repo on how Nix and Nickel can be used to generate
+CWL.
+
+[nixflow]: https://github.com/djhshih/nixflow
+
 ## Run Token Counter
 
 ```bash
