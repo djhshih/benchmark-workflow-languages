@@ -2,14 +2,14 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        "cnv.vcf"
+        expand("{sample}_cnv.vcf", sample=config["samples"])
 
 rule bwa_mem:
     input:
-        reads=lambda wildcards: config["reads"],
+        reads=lambda wildcards: expand("{sample}_R1.fastq.gz", sample=config["samples"]),
         reference=config["reference"]
     output:
-        "alignment.sam"
+        "{sample}_alignment.sam"
     resources:
         cpu=4,
         mem_mb=8192,
@@ -19,9 +19,9 @@ rule bwa_mem:
 
 rule sort_bam:
     input:
-        "alignment.sam"
+        "{sample}_alignment.sam"
     output:
-        "sorted.bam"
+        "{sample}_sorted.bam"
     resources:
         cpu=2,
         mem_mb=4096,
@@ -31,9 +31,9 @@ rule sort_bam:
 
 rule index_bam:
     input:
-        "sorted.bam"
+        "{sample}_sorted.bam"
     output:
-        "sorted.bam.bai"
+        "{sample}_sorted.bam.bai"
     resources:
         cpu=1,
         mem_mb=2048,
@@ -43,10 +43,10 @@ rule index_bam:
 
 rule collect_readcounts:
     input:
-        bam="sorted.bam",
+        bam="{sample}_sorted.bam",
         reference=config["reference"]
     output:
-        "readcounts.tsv"
+        "{sample}_readcounts.tsv"
     resources:
         cpu=2,
         mem_mb=4096,
@@ -68,22 +68,22 @@ rule collect_gc:
 
 rule denoise_coverage:
     input:
-        readcounts="readcounts.tsv",
+        readcounts="{sample}_readcounts.tsv",
         gc="gc.tsv"
     output:
-        "denoised.tsv"
+        "{sample}_denoised.tsv"
     resources:
         cpu=4,
         mem_mb=8192,
         disk_mb=2048
     shell:
-        "gatk DenoiseReadCounts --readcounts {input.readcounts} --gc-hdf5 {input.gc} --output-prefix prefix"
+        "gatk DenoiseReadCounts --readcounts {input.readcounts} --gc-hdf5 {input.gc} --output-prefix {wildcards.sample}"
 
 rule segment_cnv:
     input:
-        "denoised.tsv"
+        "{sample}_denoised.tsv"
     output:
-        "segments.tsv"
+        "{sample}_segments.tsv"
     resources:
         cpu=2,
         mem_mb=4096,
@@ -93,9 +93,9 @@ rule segment_cnv:
 
 rule call_cnv:
     input:
-        "segments.tsv"
+        "{sample}_segments.tsv"
     output:
-        "cnv.vcf"
+        "{sample}_cnv.vcf"
     resources:
         cpu=2,
         mem_mb=4096,

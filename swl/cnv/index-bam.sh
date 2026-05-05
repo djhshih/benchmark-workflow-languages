@@ -1,8 +1,9 @@
 #? Index BAM
 # in
 #   sorted_bam file | input bam
+#   sample_name str | sample name
 # out
-#   bam file = ${sorted_bam}.bai | indexed bam
+#   bam file = ${sample_name}_sorted.bam.bai | indexed bam
 # run
 #   cpu = 1
 #   memory = 2048

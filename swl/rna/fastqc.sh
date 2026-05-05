@@ -1,8 +1,9 @@
 #? FastQC quality control
 # in
 #   reads array file | input reads
+#   sample_name str | sample name
 # out
-#   reports array file = *.html | QC reports
+#   reports array file = ${sample_name}_*.html | QC reports
 # run
 #   cpu = 2
 #   memory = 4096

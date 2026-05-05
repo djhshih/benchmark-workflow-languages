@@ -649,6 +649,8 @@ def main():
                     results[(workflow, lang)]['token_lists'][str(swl_file)] = token_list
             else:
                 for file_path in sorted(lang_dir.rglob(f'*{ext_map[lang]}')):
+                    if lang == 'smk' and file_path.name == 'config.yaml':
+                        continue
                     with open(file_path, 'r') as f:
                         content = f.read()
                     content_no_comments = strip_comments(content, lang)

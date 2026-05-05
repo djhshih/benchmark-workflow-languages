@@ -2,6 +2,7 @@ version 1.0
 
 task trimmomatic {
     input {
+        String sample_name
         Array[File] reads
         File adapters
         Int cpu = 2
@@ -10,14 +11,14 @@ task trimmomatic {
     
     command <<<
         java -jar trimmomatic.jar PE ~{reads[0]} ~{reads[1]} \
-            trimmed_R1.fastq.gz trimmed_R1_unpaired.fastq.gz \
-            trimmed_R2.fastq.gz trimmed_R2_unpaired.fastq.gz \
+            trimmed_~{sample_name}_R1.fastq.gz trimmed_~{sample_name}_R1_unpaired.fastq.gz \
+            trimmed_~{sample_name}_R2.fastq.gz trimmed_~{sample_name}_R2_unpaired.fastq.gz \
             ILLUMINACLIP:~{adapters}:2:30:10 LEADING:3 TRAILING:3 \
             SLIDINGWINDOW:4:15 MINLEN:36
     >>>
     
     output {
-        Array[File] trimmed_reads = glob("trimmed_*.fastq.gz")
+        Array[File] trimmed_reads = glob("trimmed_~{sample_name}_*.fastq.gz")
         Array[File] logs = glob("*_log.txt")
     }
     
@@ -29,6 +30,7 @@ task trimmomatic {
 
 task star_align {
     input {
+        String sample_name
         Array[File] reads
         File reference_index
         Int cpu = 8
@@ -39,12 +41,12 @@ task star_align {
         mkdir -p star_out
         STAR --runMode alignReads --runThreadN ~{cpu} \
             --genomeDir ~{reference_index} --readFilesIn ~{reads[0]} ~{reads[1]} \
-            --outFileNamePrefix star_out/
+            --outFileNamePrefix star_out/~{sample_name}_
     >>>
     
     output {
-        File alignment = glob("star_out/*.bam")[0]
-        File log = glob("star_out/*.log")[0]
+        File alignment = "star_out/~{sample_name}_Aligned.sorted.bam"
+        File log = glob("star_out/~{sample_name}*.log")[0]
     }
     
     runtime {
@@ -55,6 +57,7 @@ task star_align {
 
 task fastqc {
     input {
+        String sample_name
         Array[File] reads
         Int cpu = 2
         Int memory_gb = 4
@@ -65,7 +68,7 @@ task fastqc {
     >>>
     
     output {
-        Array[File] reports = glob("*.html")
+        Array[File] reports = glob("~{sample_name}*.html")
     }
     
     runtime {
@@ -76,6 +79,7 @@ task fastqc {
 
 task featurecounts {
     input {
+        String sample_name
         File alignment
         File annotation
         Int cpu = 4
@@ -83,12 +87,12 @@ task featurecounts {
     }
     
     command <<<
-        featureCounts -T ~{cpu} -a ~{annotation} -o counts.txt ~{alignment}
+        featureCounts -T ~{cpu} -a ~{annotation} -o ~{sample_name}_counts.txt ~{alignment}
     >>>
     
     output {
-        File counts = "counts.txt"
-        File summary = "counts.txt.summary"
+        File counts = "~{sample_name}_counts.txt"
+        File summary = "~{sample_name}_counts.txt.summary"
     }
     
     runtime {
@@ -99,6 +103,7 @@ task featurecounts {
 
 workflow rna_seq {
     input {
+        String sample_name
         Array[File] reads
         File adapters
         File reference_index
@@ -107,23 +112,27 @@ workflow rna_seq {
     
     call trimmomatic {
         input:
+            sample_name = sample_name,
             reads = reads,
             adapters = adapters
     }
     
     call star_align {
         input:
+            sample_name = sample_name,
             reads = trimmomatic.trimmed_reads,
             reference_index = reference_index
     }
     
     call fastqc {
         input:
+            sample_name = sample_name,
             reads = trimmomatic.trimmed_reads
     }
     
     call featurecounts {
         input:
+            sample_name = sample_name,
             alignment = star_align.alignment,
             annotation = annotation
     }
