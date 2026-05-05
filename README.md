@@ -1,24 +1,24 @@
-# Bioinformatics Pipeline Language Comparison
+# Bioinformatics Workflow Language Comparison
 
-This directory compares languages for defining bioinformatics pipelines that can transpile to CWL, Nextflow, and/or WDL.
+This directory compares workflow languages for defining bioinformatics pipelines.
 
 ## Summary Statistics (3 pipelines, all languages)
 
 | Language | Lines | Tokens | Bash Tokens | WF Tokens | Task Tokens | Non-Bash |
 |----------|-------|--------|-------------|-----------|-------------|----------|
 | **CWL** | 665 | 2676 | 0 | 702 | 1974 | 2676 |
-| **Nextflow** | 317 | 2007 | 500 | 501 | 1006 | 1507 |
-| **WDL** | 425 | 2238 | 508 | 643 | 1087 | 1730 |
+| **Nextflow** | 317 | 2053 | 504 | 489 | 1060 | 1549 |
+| **WDL** | 434 | 2330 | 532 | 675 | 1123 | 1798 |
 | **Python DSL** | 285 | 1747 | 48 | 1084 | 615 | 1699 |
-| **Nickel** | 296 | 2380 | 579 | 908 | 893 | 1801 |
-| **Nix** | 278 | 2341 | 545 | 908 | 888 | 1796 |
-| **SWL** | 274 | 1127 | 515 | 141 | 471 | 612 |
-| **Snakemake** | 224 | 1478 | 458 | 83 | 937 | 1020 |
+| **Nickel** | 309 | 2637 | 621 | 1010 | 1006 | 2016 |
+| **Nix** | 291 | 2598 | 587 | 1010 | 1001 | 2011 |
+| **SWL** | 280 | 1271 | 579 | 141 | 551 | 692 |
+| **Snakemake** | 224 | 1697 | 467 | 128 | 1102 | 1230 |
 
 **Notes**: 
-- Tokens = WF Tokens + Task Tokens + Bash Tokens (trivial identity)
-- Non-Bash = WF Tokens + Task Tokens = Tokens - Bash Tokens
-- Indentation levels counted as `[indent]` tokens (4 spaces = 1 indent, except SWL uses 2 spaces = 1 indent)
+- Tokens = WF Tokens + Task Tokens + Bash Tokens
+- Non-Bash = WF Tokens + Task Tokens
+- Indentation levels counted as `[indent]` tokens (4 spaces = 1 indent, except SWL, which uses 2 spaces = 1 indent)
 
 ## Pipelines
 
@@ -30,14 +30,14 @@ This directory compares languages for defining bioinformatics pipelines that can
 
 | Language | Files/Pipeline | Description |
 |----------|----------------|-------------|
-| **CWL** | 5-9 | Common Workflow Language - verbose, separate files for workflow and tasks |
+| **CWL** | 5-9 | Common Workflow Language, separate files for workflow and tasks |
 | **Nextflow** | 1 | DSL2-based, HPC-friendly, single file (workflow {} vs process {}) |
-| **WDL** | 1 | Workflow Description Language - Terra-compatible (workflow {} vs task {}) |
+| **WDL** | 1 | Workflow Description Language, single file (workflow {} vs task {}) |
 | **Python DSL** | 1 | Custom Python-based DSL (Pipeline vs Tool definitions) |
-| **Nickel** | 1 | Pure configuration language (in block vs let blocks) |
-| **Nix** | 1 | Nix expression language (in block vs let blocks) |
+| **Nickel** | 1 | Pure configuration language |
+| **Nix** | 1 | Nix expression language |
 | **SWL** | 5-9 | Shell Workflow Language - .swl files = workflow, .sh files = tasks |
-| **Snakemake** | 1 | Python-based DSL, rule-based (rule all + configfile vs other rules) |
+| **Snakemake** | 1 | Python-based DSL, rule-based (rule all vs other rules) |
 
 See the [nixflow][nixflow] repo on how Nix and Nickel can be used to generate
 CWL.
