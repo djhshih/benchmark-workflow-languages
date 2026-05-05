@@ -768,5 +768,4 @@ def main():
                 print("  " + ", ".join(token_strs))
 
 if __name__ == "__main__":
-    os.chdir('/home/davids/projects/nixflow/experiments/comparison')
     main()
