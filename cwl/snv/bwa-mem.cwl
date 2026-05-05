@@ -9,9 +9,6 @@ requirements:
     coresMin: 4
     ramMin: 8192
     outdirMin: 1024
-# Nextflow equivalent: cpus 4, memory '8 GB'
-# WDL equivalent: cpu: 4, memory: "8 GB"
-# Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
 
 arguments:
   - "-t"

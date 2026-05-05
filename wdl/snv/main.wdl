@@ -69,10 +69,6 @@ task bwa_mem {
     runtime {
         cpu: 4
         memory: "8 GB"
-        # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-        # Nextflow equivalent: cpus 4, memory '8 GB'
-        # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-        # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     }
 
     output {
@@ -91,10 +87,6 @@ task mark_duplicates {
     runtime {
         cpu: 2
         memory: "4 GB"
-        # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-        # Nextflow equivalent: cpus 2, memory '4 GB'
-        # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-        # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     }
 
     output {
@@ -118,10 +110,6 @@ task base_recalibrator {
     runtime {
         cpu: 2
         memory: "4 GB"
-        # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-        # Nextflow equivalent: cpus 2, memory '4 GB'
-        # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-        # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     }
 
     output {
@@ -142,10 +130,6 @@ task apply_bqsr {
     runtime {
         cpu: 2
         memory: "4 GB"
-        # CWL equivalent: coresMin: 2, ramMin: 4096, outdirMin: 1024
-        # Nextflow equivalent: cpus 2, memory '4 GB'
-        # Python equivalent: cpu=2, memory_mb=4096, disk_mb=1024
-        # Nickel equivalent: cpu = 2, memory = 4096, disk = 1024
     }
 
     output {
@@ -166,10 +150,6 @@ task haplotype_caller {
     runtime {
         cpu: 4
         memory: "8 GB"
-        # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-        # Nextflow equivalent: cpus 4, memory '8 GB'
-        # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-        # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     }
 
     output {
@@ -189,10 +169,6 @@ task variant_filter {
     runtime {
         cpu: 4
         memory: "8 GB"
-        # CWL equivalent: coresMin: 4, ramMin: 8192, outdirMin: 1024
-        # Nextflow equivalent: cpus 4, memory '8 GB'
-        # Python equivalent: cpu=4, memory_mb=8192, disk_mb=1024
-        # Nickel equivalent: cpu = 4, memory = 8192, disk = 1024
     }
 
     output {
