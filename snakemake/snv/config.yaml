@@ -1,0 +1,6 @@
+samples:
+  - sample1
+  - sample2
+reference: "reference.fa"
+known_sites: []
+reads: "*.fastq.gz"
