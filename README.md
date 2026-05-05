@@ -15,7 +15,7 @@ This directory compares languages for defining bioinformatics pipelines that can
 | **SWL** | 1127 | 141 | 986 | 274 | 4.11 |
 | **Snakemake** | 1478 | 83 | 1395 | 224 | 6.60 |
 
-Run `count_tokens.py` to see what tokens are counted.
+Run `./count_tokens.py` to see what tokens are counted.
 
 ## Pipelines
 
@@ -35,12 +35,6 @@ Run `count_tokens.py` to see what tokens are counted.
 | **Nix** | 1 | Nix expression language |
 | **SWL** | 5-9 | Simple Workflow Language - .swl files = workflow, .sh files = tasks |
 | **Snakemake** | 1 | Python-based DSL, rule-based (rule all + other rules) |
-
-## Run Token Counter
-
-```bash
-python3 count_tokens.py
-```
 
 ## Files
 
