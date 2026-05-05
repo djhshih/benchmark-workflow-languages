@@ -4,7 +4,7 @@
 #   adapters file | adapter sequences
 #   sample_name str | sample name
 # out
-#   trimmed_reads array file = trimmed_${sample_name}_*.fastq.gz | trimmed reads
+#   reads array file = trimmed_${sample_name}_*.fastq.gz | trimmed reads
 #   logs array file = ${sample_name}_*_log.txt | trimming logs
 # run
 #   cpu = 2

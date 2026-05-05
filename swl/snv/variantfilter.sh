@@ -2,11 +2,12 @@
 # in
 #   variants file | input variants
 #   reference file | reference genome
+#   sample_name str | sample name
 # out
-#   filtered_variants file = filtered.vcf | filtered variants
+#   filtered_variants file = ${sample_name}_filtered.vcf | filtered variants
 # run
 #   cpu = 4
 #   memory = 8192
 #   disk = 1024
 
-java -jar gatk VariantRecalibrator -V ${variants} -R ${reference} -O filtered.vcf --tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 90.0
+java -jar gatk VariantRecalibrator -V ${variants} -R ${reference} -O ${sample_name}_filtered.vcf --tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 90.0

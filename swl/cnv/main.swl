@@ -9,6 +9,5 @@ denoise = import "denoisecoverage.sh"
 segment = import "segmentcnv.sh"
 call_cnv = import "callcnv.sh"
 
-# Workflow: align -> sort -> index -> collect_counts + collect_gc -> denoise -> segment -> call_cnv
 # Note: collect_counts and collect_gc run in parallel, then both feed into denoise
 align | sort | index | collect_counts | collect_gc | denoise | segment | call_cnv
