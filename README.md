@@ -6,19 +6,19 @@ This directory compares workflow languages for defining bioinformatics pipelines
 
 | Language | Lines | Tokens | Bash Tokens | WF Tokens | Task Tokens | Non-Bash |
 |----------|-------|--------|-------------|-----------|-------------|----------|
-| **CWL** | 665 | 2676 | 0 | 702 | 1974 | 2676 |
-| **Nextflow** | 317 | 2053 | 504 | 489 | 1060 | 1549 |
-| **WDL** | 434 | 2330 | 532 | 675 | 1123 | 1798 |
-| **Python DSL** | 285 | 1747 | 48 | 1084 | 615 | 1699 |
-| **Nickel** | 309 | 2637 | 621 | 1010 | 1006 | 2016 |
-| **Nix** | 291 | 2598 | 587 | 1010 | 1001 | 2011 |
-| **SWL** | 280 | 1271 | 579 | 141 | 551 | 692 |
-| **Snakemake** | 224 | 1697 | 467 | 128 | 1102 | 1230 |
+| **CWL** | 665 | 3907 | 0 | 1098 | 2809 | 3907 |
+| **Nextflow** | 317 | 2327 | 617 | 618 | 1092 | 1710 |
+| **WDL** | 434 | 2714 | 687 | 761 | 1266 | 2027 |
+| **Python DSL** | 285 | 1517 | 111 | 870 | 536 | 1406 |
+| **Nickel** | 309 | 2838 | 666 | 1012 | 1160 | 2172 |
+| **Nix** | 291 | 2820 | 637 | 1018 | 1165 | 2183 |
+| **SWL** | 280 | 2185 | 1729 | 291 | 165 | 456 |
+| **Snakemake** | 224 | 1633 | 514 | 103 | 1016 | 1119 |
 
 **Notes**: 
 - Tokens = WF Tokens + Task Tokens + Bash Tokens
 - Non-Bash = WF Tokens + Task Tokens
-- Indentation levels counted as `[indent]` tokens (4 spaces = 1 indent, except SWL, which uses 2 spaces = 1 indent)
+- Tokens counted using OpenAI's `o200k_harmony` BPE tokenizer (via `tiktoken`)
 
 ## Pipelines
 

@@ -12,12 +12,7 @@ This comparison evaluates 8 configuration/task languages for specifying bioinfor
 
 ## Token Count Methodology
 
-A **token** is a whitespace-separated unit in the source code, including:
-- Keywords: `process`, `task`, `workflow`, `in`, `out`, `run`, `let`, `rule`, etc.
-- Identifiers: variable names, tool names, file paths
-- Operators: `=`, `+`, `-`, `>`, `<`, `->`, etc.
-- Punctuation: `:`, `{`, `}`, `(`, `)`, `[`, `]`, `,`, `|`, `.`, `"`, `'`
-- **Indentation**: `[indent]` tokens (4 spaces = 1 indent for most languages; SWL uses 2 spaces = 1 indent)
+Tokens are counted using OpenAI's `o200k_harmony` BPE tokenizer (via the `tiktoken` Python package) applied to non-comment, non-blank lines.
 
 Excluded from counting:
 - Lines starting with `#` (comments), except SWL specification lines (`#?`, `# in`, `# out`, `# run`)
@@ -86,30 +81,30 @@ comparison/
 
 | Workflow | Language | Files | Lines | Tokens | WF Tok | Task Tok | Bash |
 |----------|----------|-------|-------|--------|--------|----------|------|
-| SNV | CWL | 7 | 238 | 941 | 260 | 681 | 0 |
-| SNV | Nextflow | 1 | 110 | 738 | 175 | 372 | 191 |
-| SNV | WDL | 1 | 145 | 781 | 249 | 337 | 195 |
-| SNV | Python DSL | 1 | 96 | 608 | 388 | 196 | 24 |
-| SNV | Nickel | 1 | 121 | 937 | 353 | 361 | 223 |
-| SNV | Nix | 1 | 101 | 880 | 353 | 338 | 189 |
-| SNV | SWL | 7 | 92 | 426 | 47 | 176 | 203 |
-| SNV | Snakemake | 1 | 78 | 571 | 44 | 358 | 169 |
-| CNV | CWL | 9 | 250 | 970 | 273 | 697 | 0 |
-| CNV | Nextflow | 1 | 129 | 765 | 187 | 432 | 146 |
-| CNV | WDL | 1 | 167 | 802 | 251 | 401 | 150 |
-| CNV | Python DSL | 1 | 111 | 660 | 440 | 204 | 16 |
-| CNV | Nickel | 1 | 116 | 999 | 393 | 414 | 192 |
-| CNV | Nix | 1 | 117 | 1008 | 393 | 423 | 192 |
-| CNV | SWL | 9 | 118 | 484 | 63 | 229 | 192 |
-| CNV | Snakemake | 1 | 95 | 601 | 42 | 404 | 155 |
-| RNA-seq | CWL | 5 | 177 | 765 | 169 | 596 | 0 |
-| RNA-seq | Nextflow | 1 | 78 | 550 | 127 | 256 | 167 |
-| RNA-seq | WDL | 1 | 122 | 747 | 175 | 385 | 187 |
-| RNA-seq | Python DSL | 1 | 78 | 479 | 256 | 215 | 8 |
-| RNA-seq | Nickel | 1 | 72 | 701 | 264 | 231 | 206 |
-| RNA-seq | Nix | 1 | 73 | 710 | 264 | 240 | 206 |
-| RNA-seq | SWL | 5 | 70 | 361 | 31 | 146 | 184 |
-| RNA-seq | Snakemake | 1 | 51 | 525 | 42 | 340 | 143 |
+| SNV | CWL | 7 | 238 | 1441 | 430 | 1011 | 0 |
+| SNV | Nextflow | 1 | 110 | 879 | 238 | 400 | 241 |
+| SNV | WDL | 1 | 145 | 955 | 299 | 400 | 256 |
+| SNV | Python DSL | 1 | 96 | 540 | 326 | 163 | 51 |
+| SNV | Nickel | 1 | 121 | 1027 | 370 | 422 | 235 |
+| SNV | Nix | 1 | 101 | 981 | 376 | 399 | 206 |
+| SNV | SWL | 7 | 92 | 754 | 95 | 55 | 604 |
+| SNV | Snakemake | 1 | 78 | 539 | 35 | 316 | 188 |
+| CNV | CWL | 9 | 250 | 1464 | 423 | 1041 | 0 |
+| CNV | Nextflow | 1 | 129 | 881 | 241 | 448 | 192 |
+| CNV | WDL | 1 | 167 | 945 | 281 | 457 | 207 |
+| CNV | Python DSL | 1 | 111 | 567 | 353 | 169 | 45 |
+| CNV | Nickel | 1 | 116 | 1099 | 392 | 492 | 215 |
+| CNV | Nix | 1 | 117 | 1113 | 392 | 506 | 215 |
+| CNV | SWL | 9 | 118 | 858 | 128 | 74 | 656 |
+| CNV | Snakemake | 1 | 95 | 586 | 35 | 376 | 175 |
+| RNA-seq | CWL | 5 | 177 | 1002 | 245 | 757 | 0 |
+| RNA-seq | Nextflow | 1 | 78 | 567 | 139 | 244 | 184 |
+| RNA-seq | WDL | 1 | 122 | 814 | 181 | 409 | 224 |
+| RNA-seq | Python DSL | 1 | 78 | 410 | 191 | 204 | 15 |
+| RNA-seq | Nickel | 1 | 72 | 712 | 250 | 246 | 216 |
+| RNA-seq | Nix | 1 | 73 | 726 | 250 | 260 | 216 |
+| RNA-seq | SWL | 5 | 70 | 573 | 68 | 36 | 469 |
+| RNA-seq | Snakemake | 1 | 51 | 508 | 33 | 324 | 151 |
 
 **Note**: Tokens = WF + Task + Bash
 
@@ -117,14 +112,14 @@ comparison/
 
 | Language | Lines | Tokens | Bash Tok | WF Tok | Task Tok | Non-Bash |
 |----------|-------|--------|----------|--------|----------|----------|
-| **CWL** | 665 | 2676 | 0 | 702 | 1974 | 2676 |
-| **Nextflow** | 317 | 2053 | 504 | 489 | 1060 | 1549 |
-| **WDL** | 434 | 2330 | 532 | 675 | 1123 | 1798 |
-| **Python DSL** | 285 | 1747 | 48 | 1084 | 615 | 1699 |
-| **Nickel** | 309 | 2637 | 621 | 1010 | 1006 | 2016 |
-| **Nix** | 291 | 2598 | 587 | 1010 | 1001 | 2011 |
-| **SWL** | 280 | 1271 | 579 | 141 | 551 | 692 |
-| **Snakemake** | 224 | 1697 | 467 | 128 | 1102 | 1230 |
+| **CWL** | 665 | 3907 | 0 | 1098 | 2809 | 3907 |
+| **Nextflow** | 317 | 2327 | 617 | 618 | 1092 | 1710 |
+| **WDL** | 434 | 2714 | 687 | 761 | 1266 | 2027 |
+| **Python DSL** | 285 | 1517 | 111 | 870 | 536 | 1406 |
+| **Nickel** | 309 | 2838 | 666 | 1012 | 1160 | 2172 |
+| **Nix** | 291 | 2820 | 637 | 1018 | 1165 | 2183 |
+| **SWL** | 280 | 2185 | 1729 | 291 | 165 | 456 |
+| **Snakemake** | 224 | 1633 | 514 | 103 | 1016 | 1119 |
 
 **Note**: Non-Bash = WF + Task = Tokens - Bash
 

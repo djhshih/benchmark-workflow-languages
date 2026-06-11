@@ -26,6 +26,10 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
+import tiktoken
+
+_tokenizer = tiktoken.get_encoding("o200k_harmony")
+
 def strip_comments(content, language):
     """Remove comments based on language."""
     lines = content.split('\n')
@@ -74,116 +78,12 @@ def strip_swl_comment_part(line):
     return line
 
 def count_tokens(content, language):
-    """Count tokens in content (non-comment lines only)."""
-    tokens = get_token_list(content, language)
-    return len(tokens)
+    """Count tokens in content using tiktoken o200k_harmony tokenizer."""
+    return len(_tokenizer.encode(content))
 
 def get_token_list(content, language):
-    """Get list of tokens in content (non-comment lines only)."""
-    tokens = []
-    
-    if language == 'swl':
-        # Special handling for SWL - process block structure
-        lines = content.split('\n')
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            if not line.strip():
-                i += 1
-                continue
-            
-            leading_ws = len(line) - len(line.lstrip())
-            if leading_ws > 0:
-                indent_size = 2 if language == 'swl' else 4
-                indent_level = leading_ws // indent_size
-                for _ in range(indent_level):
-                    tokens.append('[indent]')
-            elif language == 'swl' and line.startswith('#'):
-                # For SWL, check for indentation after #
-                after_hash = line[1:]
-                if after_hash and after_hash[0] == ' ':
-                    spaces_after_hash = len(after_hash) - len(after_hash.lstrip())
-                    if spaces_after_hash > 0:
-                        indent_level = spaces_after_hash // 2
-                        for _ in range(indent_level):
-                            tokens.append('[indent]')
-            
-            if line.startswith('#'):
-                after_hash = line[1:].strip()
-                
-                # Handle #? description line
-                if after_hash.startswith('?'):
-                    tokens.append('#?')
-                    rest = after_hash[1:].strip()
-                    if rest:
-                        parts = re.split(r'\s+', rest)
-                        tokens.extend([t for t in parts if t])
-                
-                # Handle # in, # out, # run headers
-                elif after_hash in ['in', 'out', 'run']:
-                    tokens.append('#' + after_hash)
-                    # Process subsequent lines until we hit a blank line or another #? or # in/out/run
-                    i += 1
-                    while i < len(lines):
-                        sub_line = lines[i]
-                        if not sub_line.strip():
-                            break
-                        if sub_line.startswith('#?'):
-                            break
-                        if sub_line.strip().startswith('#') and sub_line.strip()[1:].strip() in ['in', 'out', 'run']:
-                            break
-                        if sub_line.strip().startswith('#'):
-                            # Check for indentation after #
-                            after_hash_sub = sub_line[1:]
-                            if after_hash_sub and after_hash_sub[0] == ' ':
-                                spaces_after_hash = len(after_hash_sub) - len(after_hash_sub.lstrip())
-                                if spaces_after_hash > 0:
-                                    indent_level = spaces_after_hash // 2
-                                    for _ in range(indent_level):
-                                        tokens.append('[indent]')
-                            # This is a content line under # in/# out/# run - process it
-                            # Strip the leading # and process the content
-                            content_part = sub_line.strip()[1:].strip()
-                            # Strip anything after | (comment within comment)
-                            if '|' in content_part:
-                                content_part = content_part.split('|')[0].strip()
-                            if content_part:
-                                parts = re.split(r'(\s+|[=,:{}\[\]()"])', content_part)
-                                tokens.extend([t for t in parts if t and t.strip()])
-                        i += 1
-                    continue
-                # Skip other # lines (like #   cpu = 4 type comments - but now we keep them in the block above)
-                else:
-                    # Check if it's a content line (has variable declarations)
-                    if after_hash and not after_hash.startswith('?'):
-                        # This might be a content line under # in/# out/# run
-                        # But if it's just a simple comment (like "# this is a comment"), skip it
-                        # If it has variable-like content, process it
-                        pass
-            else:
-                # Non-comment line - process normally
-                parts = re.split(r"(\s+|[=,:{}\[\]()\"'])", line)
-                tokens.extend([t for t in parts if t and t.strip()])
-            
-            i += 1
-        
-        return tokens
-    
-    # For other languages, use standard processing
-    for line in content.split('\n'):
-        if line.strip():
-            leading_ws = len(line) - len(line.lstrip())
-            if leading_ws > 0:
-                indent_size = 2 if language == 'swl' else 4
-                indent_level = leading_ws // indent_size
-                for _ in range(indent_level):
-                    tokens.append('[indent]')
-            # Split on whitespace AND punctuation to count each punctuation as a token
-            # Include quotes and dots as separate tokens
-            parts = re.split(r"(\s+|[=,:{}\[\]()\"'.])", line)
-            tokens.extend([t for t in parts if t and t.strip()])
-    
-    return tokens
+    """Get list of token IDs in content using tiktoken o200k_harmony tokenizer."""
+    return _tokenizer.encode(content)
 
 def count_nf_tokens(content):
     """Count workflow tokens and tool/process tokens in Nextflow."""
