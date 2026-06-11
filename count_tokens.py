@@ -494,6 +494,8 @@ def main():
     
     results = defaultdict(lambda: {'lines': 0, 'tokens': 0, 'workflow_tokens': 0, 'task_tokens': 0, 'bash_tokens': 0, 'files': [], 'token_lists': {}})
     
+    file_records = []
+    
     base_dir = Path('.')
     
     ext_map = {'cwl': '.cwl', 'nf': '.nf', 'wdl': '.wdl', 'py': '.py', 'ncl': '.ncl', 'swl': '.swl', 'nix': '.nix', 'smk': ''}
@@ -516,13 +518,15 @@ def main():
                     workflow_tokens, task_tokens = count_py_tokens(content_no_comments)
                     bash_tokens = extract_bash_tokens(content_no_comments, 'py')
                     tokens = workflow_tokens + task_tokens
-                    results[(workflow, lang)]['lines'] += len(content_no_comments.split('\n'))
+                    lines = len(content_no_comments.split('\n'))
+                    results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                     results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
                     results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     results[(workflow, lang)]['files'].append(str(py_file))
                     results[(workflow, lang)]['token_lists'][str(py_file)] = token_list
+                    file_records.append((workflow, lang, str(py_file), lines, tokens, workflow_tokens, task_tokens - bash_tokens, bash_tokens))
             elif lang == 'swl':
                 for sh_file in sorted(lang_dir.glob('*.sh')):
                     with open(sh_file, 'r') as f:
@@ -530,23 +534,27 @@ def main():
                     token_list = get_token_list(content, 'swl')
                     tokens = len(token_list)
                     bash_tokens = extract_bash_tokens(content, 'swl')
+                    lines = len(content.split('\n'))
                     results[(workflow, lang)]['files'].append(str(sh_file))
-                    results[(workflow, lang)]['lines'] += len(content.split('\n'))
+                    results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['task_tokens'] += tokens - bash_tokens
                     results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     results[(workflow, lang)]['token_lists'][str(sh_file)] = token_list
+                    file_records.append((workflow, lang, str(sh_file), lines, tokens, 0, tokens - bash_tokens, bash_tokens))
                 
                 for swl_file in sorted(lang_dir.glob('*.swl')):
                     with open(swl_file, 'r') as f:
                         content = f.read()
                     token_list = get_token_list(content, 'swl')
                     tokens = len(token_list)
+                    lines = len(content.split('\n'))
                     results[(workflow, lang)]['files'].append(str(swl_file))
-                    results[(workflow, lang)]['lines'] += len(content.split('\n'))
+                    results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['workflow_tokens'] += tokens
                     results[(workflow, lang)]['token_lists'][str(swl_file)] = token_list
+                    file_records.append((workflow, lang, str(swl_file), lines, tokens, tokens, 0, 0))
             else:
                 for file_path in sorted(lang_dir.rglob(f'*{ext_map[lang]}')):
                     if lang == 'smk' and file_path.name == 'config.yaml':
@@ -555,6 +563,7 @@ def main():
                         content = f.read()
                     content_no_comments = strip_comments(content, lang)
                     token_list = get_token_list(content_no_comments, lang)
+                    lines = len(content_no_comments.split('\n'))
                     
                     is_workflow = 'class: Workflow' in content or 'workflow {' in content or 'workflow snv_calling' in content or 'workflow cnv_calling' in content or 'dfn.Workflow' in content or 'name = ' in content or 'outputs = ' in content
                     
@@ -565,6 +574,7 @@ def main():
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                         results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
                         results[(workflow, lang)]['bash_tokens'] += bash_tokens
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, workflow_tokens, task_tokens - bash_tokens, bash_tokens))
                     elif lang == 'wdl':
                         workflow_tokens, task_tokens = count_wdl_tokens(content_no_comments)
                         bash_tokens = extract_bash_tokens(content_no_comments, 'wdl')
@@ -572,6 +582,7 @@ def main():
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                         results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
                         results[(workflow, lang)]['bash_tokens'] += bash_tokens
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, workflow_tokens, task_tokens - bash_tokens, bash_tokens))
                     elif lang == 'ncl' or lang == 'nix':
                         workflow_tokens, task_tokens = count_nickel_tokens(content_no_comments)
                         bash_tokens = extract_bash_tokens(content_no_comments, lang)
@@ -579,6 +590,7 @@ def main():
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                         results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
                         results[(workflow, lang)]['bash_tokens'] += bash_tokens
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, workflow_tokens, task_tokens - bash_tokens, bash_tokens))
                     elif lang == 'smk':
                         workflow_tokens, task_tokens = count_snakemake_tokens(content_no_comments)
                         bash_tokens = extract_bash_tokens(content_no_comments, 'smk')
@@ -586,18 +598,21 @@ def main():
                         results[(workflow, lang)]['workflow_tokens'] += workflow_tokens
                         results[(workflow, lang)]['task_tokens'] += task_tokens - bash_tokens
                         results[(workflow, lang)]['bash_tokens'] += bash_tokens
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, workflow_tokens, task_tokens - bash_tokens, bash_tokens))
                     elif is_workflow:
                         tokens = len(token_list)
                         results[(workflow, lang)]['workflow_tokens'] += tokens
                         results[(workflow, lang)]['bash_tokens'] += 0
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, tokens, 0, 0))
                     else:
                         tokens = len(token_list)
                         bash_tokens = extract_bash_tokens(content_no_comments, lang)
                         results[(workflow, lang)]['task_tokens'] += tokens - bash_tokens
                         results[(workflow, lang)]['bash_tokens'] += bash_tokens
+                        file_records.append((workflow, lang, str(file_path), lines, tokens, 0, tokens - bash_tokens, bash_tokens))
                     
                     results[(workflow, lang)]['files'].append(str(file_path))
-                    results[(workflow, lang)]['lines'] += len(content_no_comments.split('\n'))
+                    results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['token_lists'][str(file_path)] = token_list
     
@@ -666,6 +681,14 @@ def main():
                 # Print unique tokens: token (1), token (2), ...
                 token_strs = [f"{t} ({i+1})" for i, t in enumerate(unique_tokens)]
                 print("  " + ", ".join(token_strs))
+    
+    # Write per-file granular results to CSV
+    import csv
+    with open('token_counts.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['workflow', 'language', 'file', 'lines', 'total_tokens', 'wf_tokens', 'task_tokens', 'bash_tokens'])
+        for rec in sorted(file_records):
+            writer.writerow(rec)
 
 if __name__ == "__main__":
     main()
