@@ -1,11 +1,11 @@
-#? Trimmomatic adapter trimming
+#@ Trimmomatic adapter trimming
 # in
-#   reads array file | paired-end reads
-#   adapters file | adapter sequences
-#   sample_name str | sample name
+#   reads [file]
+#   adapters file
+#   sample_name str
 # out
-#   reads array file = trimmed_${sample_name}_*.fastq.gz | trimmed reads
-#   logs array file = ${sample_name}_*_log.txt | trimming logs
+#   reads [file] = trimmed_${sample_name}_*.fastq.gz
+#   logs [file] = ${sample_name}_*_log.txt
 # run
 #   cpu = 2
 #   memory = 4096

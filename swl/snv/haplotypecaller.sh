@@ -1,10 +1,10 @@
-#? Haplotype Caller
+#@ Haplotype Caller
 # in
-#   bam file | input BAM
-#   reference file | reference genome
-#   sample_name str | sample name
+#   bam file
+#   reference file
+#   sample_name str
 # out
-#   variants file = ${sample_name}_variants.g.vcf | called variants
+#   variants file = ${sample_name}_variants.g.vcf
 # run
 #   cpu = 4
 #   memory = 8192

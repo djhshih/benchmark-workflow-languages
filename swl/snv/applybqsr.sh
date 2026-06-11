@@ -1,11 +1,11 @@
-#? Apply BQSR
+#@ Apply BQSR
 # in
-#   bam file | input BAM
-#   recal_table file | recalibration table
-#   reference file | reference genome
-#   sample_name str | sample name
+#   bam file
+#   recal_table file
+#   reference file
+#   sample_name str
 # out
-#   bam file = ${sample_name}_recalibrated.bam | recalibrated BAM
+#   bam file = ${sample_name}_recalibrated.bam
 # run
 #   cpu = 2
 #   memory = 4096

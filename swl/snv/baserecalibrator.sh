@@ -1,11 +1,11 @@
-#? Base Recalibrator
+#@ Base Recalibrator
 # in
-#   input file | input BAM
-#   reference file | reference genome
-#   known_sites array | known variant sites
+#   input file
+#   reference file
+#   known_sites [file]
 # out
-#   recal_table file = recal.table | recalibration table
-#   report file = report.txt | recalibration report
+#   recal_table file = recal.table
+#   report file = report.txt
 # run
 #   cpu = 2
 #   memory = 4096

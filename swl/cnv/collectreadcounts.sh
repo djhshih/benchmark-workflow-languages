@@ -1,11 +1,11 @@
-#? Collect Read Counts
+#@ Collect Read Counts
 # in
-#   bam file | input bam
-#   reference file | reference sequence
-#   intervals file | target intervals
-#   sample_name str | sample name
+#   bam file
+#   reference file
+#   intervals file
+#   sample_name str
 # out
-#   counts file = ${sample_name}_readcounts.tsv | read counts
+#   counts file = ${sample_name}_readcounts.tsv
 # run
 #   cpu = 2
 #   memory = 4096

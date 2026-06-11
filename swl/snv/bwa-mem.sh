@@ -1,10 +1,10 @@
-#? BWA MEM alignment
+#@ BWA MEM alignment
 # in
-#   reads array file | paired-end reads
-#   reference file  | reference sequence
-#   sample_name str | sample name
+#   reads [file]
+#   reference file 
+#   sample_name str
 # out
-#   alignment file = ${sample_name}.sam | output alignment
+#   alignment file = ${sample_name}.sam
 # run
 #   cpu = 4
 #   memory = 8192

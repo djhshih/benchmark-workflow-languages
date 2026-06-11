@@ -1,9 +1,9 @@
-#? Call CNV
+#@ Call CNV
 # in
-#   segments file | segments
-#   sample_name str | sample name
+#   segments file
+#   sample_name str
 # out
-#   cnv_calls file = ${sample_name}_cnv.vcf | CNV calls
+#   cnv_calls file = ${sample_name}_cnv.vcf
 # run
 #   cpu = 2
 #   memory = 4096

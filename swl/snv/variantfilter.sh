@@ -1,10 +1,10 @@
-#? Variant Filter
+#@ Variant Filter
 # in
-#   variants file | input variants
-#   reference file | reference genome
-#   sample_name str | sample name
+#   variants file
+#   reference file
+#   sample_name str
 # out
-#   filtered_variants file = ${sample_name}_filtered.vcf | filtered variants
+#   filtered_variants file = ${sample_name}_filtered.vcf
 # run
 #   cpu = 4
 #   memory = 8192

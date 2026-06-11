@@ -1,9 +1,9 @@
-#? Collect GC
+#@ Collect GC
 # in
-#   reference file | reference sequence
-#   intervals file | target intervals
+#   reference file
+#   intervals file
 # out
-#   gc_file file = gc.txt | GC curve
+#   gc_file file = gc.txt
 # run
 #   cpu = 1
 #   memory = 2048

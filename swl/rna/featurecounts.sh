@@ -1,11 +1,11 @@
-#? featureCounts quantification
+#@ featureCounts quantification
 # in
-#   alignment file | aligned BAM
-#   annotation file | GTF annotation
-#   sample_name str | sample name
+#   alignment file
+#   annotation file
+#   sample_name str
 # out
-#   counts file = ${sample_name}_counts.txt | read counts
-#   summary file = ${sample_name}_counts.txt.summary | count summary
+#   counts file = ${sample_name}_counts.txt
+#   summary file = ${sample_name}_counts.txt.summary
 # run
 #   cpu = 4
 #   memory = 8192

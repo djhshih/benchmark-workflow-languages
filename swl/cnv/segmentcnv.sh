@@ -1,10 +1,10 @@
-#? Segment CNV
+#@ Segment CNV
 # in
-#   denoised_cr file | denoised copy ratios
-#   intervals file | target intervals
-#   sample_name str | sample name
+#   denoised_cr file
+#   intervals file
+#   sample_name str
 # out
-#   segments file = ${sample_name}_segments.tsv | segments
+#   segments file = ${sample_name}_segments.tsv
 # run
 #   cpu = 2
 #   memory = 4096

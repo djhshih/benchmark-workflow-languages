@@ -1,11 +1,11 @@
-#? Denoise Coverage
+#@ Denoise Coverage
 # in
-#   counts file | read counts
-#   gc_file file | GC curve file
-#   reference_panel array file | reference panel
-#   sample_name str | sample name
+#   counts file
+#   gc_file file
+#   reference_panel [file]
+#   sample_name str
 # out
-#   denoised_cr file = ${sample_name}_denoised.tsv | denoised copy ratios
+#   denoised_cr file = ${sample_name}_denoised.tsv
 # run
 #   cpu = 2
 #   memory = 4096

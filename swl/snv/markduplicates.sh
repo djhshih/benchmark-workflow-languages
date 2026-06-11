@@ -1,10 +1,10 @@
-#? Mark Duplicates
+#@ Mark Duplicates
 # in
-#   alignment file | input BAM
-#   sample_name str | sample name
+#   alignment file
+#   sample_name str
 # out
-#   deduped_bam file = deduped.bam | deduplicated BAM
-#   metrics file = metrics.txt | duplicate metrics
+#   deduped_bam file = deduped.bam
+#   metrics file = metrics.txt
 # run
 #   cpu = 2
 #   memory = 4096

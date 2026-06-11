@@ -1,9 +1,9 @@
-#? Sort BAM
+#@ Sort BAM
 # in
-#   sam file | input SAM
-#   sample_name str | sample name
+#   sam file
+#   sample_name str
 # out
-#   bam file = ${sample_name}_sorted.bam | sorted bam
+#   bam file = ${sample_name}_sorted.bam
 # run
 #   cpu = 2
 #   memory = 4096
