@@ -12,7 +12,7 @@ This directory compares workflow languages for defining bioinformatics pipelines
 | **Python DSL** | 285 | 1517 | 111 | 870 | 536 | 1406 |
 | **Nickel** | 309 | 2838 | 666 | 1012 | 1160 | 2172 |
 | **Nix** | 291 | 2820 | 637 | 1018 | 1165 | 2183 |
-| **SWL** | 280 | 2185 | 1729 | 291 | 165 | 456 |
+| **SWL** | 227 | 2002 | 615 | 227 | 1160 | 1387 |
 | **Snakemake** | 224 | 1633 | 514 | 103 | 1016 | 1119 |
 
 **Notes**: 
