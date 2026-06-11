@@ -44,8 +44,11 @@ def strip_comments(content, language):
         if language == 'swl':
             if stripped.startswith('#'):
                 after_hash = stripped[1:].strip()
-                # Keep #? and # in / # out / # run lines (exactly), skip task config
-                if after_hash.startswith('?') or after_hash.startswith('in') or after_hash.startswith('out') or after_hash.startswith('run'):
+                is_header = after_hash.startswith('?') or after_hash.startswith('in') or after_hash.startswith('out') or after_hash.startswith('run')
+                hash_idx = line.index('#')
+                after_hash_raw = line[hash_idx + 1:]
+                is_sub_content = after_hash_raw.startswith(' ') or after_hash_raw.startswith('\t')
+                if is_header or is_sub_content:
                     result.append(line)
                 continue
         elif language == 'nf':
@@ -531,24 +534,30 @@ def main():
                 for sh_file in sorted(lang_dir.glob('*.sh')):
                     with open(sh_file, 'r') as f:
                         content = f.read()
-                    token_list = get_token_list(content, 'swl')
+                    content_stripped = strip_comments(content, 'swl')
+                    token_list = get_token_list(content_stripped, 'swl')
                     tokens = len(token_list)
-                    bash_tokens = extract_bash_tokens(content, 'swl')
-                    lines = len(content.split('\n'))
+                    lines = len(content_stripped.split('\n'))
+                    # Bash = non-comment lines in stripped content (actual shell code)
+                    bash_lines = [l for l in content_stripped.split('\n') if l.strip() and not l.strip().startswith('#')]
+                    bash_tokens = len(get_token_list('\n'.join(bash_lines), 'swl')) if bash_lines else 0
+                    task_tokens_nonbash = tokens - bash_tokens
                     results[(workflow, lang)]['files'].append(str(sh_file))
                     results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
-                    results[(workflow, lang)]['task_tokens'] += tokens - bash_tokens
+                    results[(workflow, lang)]['task_tokens'] += task_tokens_nonbash
                     results[(workflow, lang)]['bash_tokens'] += bash_tokens
                     results[(workflow, lang)]['token_lists'][str(sh_file)] = token_list
-                    file_records.append((workflow, lang, str(sh_file), lines, tokens, 0, tokens - bash_tokens, bash_tokens))
+                    file_records.append((workflow, lang, str(sh_file), lines, tokens, 0, task_tokens_nonbash, bash_tokens))
                 
                 for swl_file in sorted(lang_dir.glob('*.swl')):
                     with open(swl_file, 'r') as f:
                         content = f.read()
-                    token_list = get_token_list(content, 'swl')
+                    # Strip all # comments from .swl files (they're just informational)
+                    content_stripped = strip_comments(content, 'cwl')
+                    token_list = get_token_list(content_stripped, 'swl')
                     tokens = len(token_list)
-                    lines = len(content.split('\n'))
+                    lines = len(content_stripped.split('\n'))
                     results[(workflow, lang)]['files'].append(str(swl_file))
                     results[(workflow, lang)]['lines'] += lines
                     results[(workflow, lang)]['tokens'] += tokens
