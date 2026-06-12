@@ -1,0 +1,7 @@
+sample: "sample"
+reads: "/path/to/sample.fastq.gz"
+reference_fasta: "/path/to/reference.fasta"
+reference_fasta_fai: "/path/to/reference.fasta.fai"
+platform: "ont"
+preset: "map-ont"
+clair3_model: "r941_prom_sup_g5014"

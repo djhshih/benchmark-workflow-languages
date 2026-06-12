@@ -1,0 +1,106 @@
+configfile: "config.yaml"
+
+rule all:
+    input:
+        expand("{sample}.sorted.bam", sample=[config["sample"]]),
+        expand("{sample}.sorted.bam.bai", sample=[config["sample"]]),
+        expand("{sample}.clair3.vcf.gz", sample=[config["sample"]]),
+        expand("{sample}.clair3.vcf.gz.tbi", sample=[config["sample"]]),
+        expand("{sample}.vcf.stats", sample=[config["sample"]]),
+        expand("{sample}.mosdepth.mosdepth.summary.txt", sample=[config["sample"]])
+
+rule minimap2_map:
+    input:
+        reads=config["reads"],
+        reference=config["reference_fasta"]
+    output:
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai"
+    params:
+        preset=config["preset"],
+        platform=config["platform"],
+        rg=lambda wildcards: "@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tPL:" + config["platform"]
+    threads: 8
+    resources:
+        mem_mb=24576
+        disk_mb=10240
+    container: "quay.io/biocontainers/mulled-v2-66534bcbb7031a148b13e2ad42583020b9cd25c4:3161f532a5ea6f1dec9be5667c9efc2afdac6104-0"
+    shell:
+        "minimap2 -a -x {params.preset} -t {threads} -y "
+        "-R '{params.rg}' "
+        "{input.reference} {input.reads} | "
+        "samtools sort --threads 2 -m 1G -o {output.bam} - && "
+        "samtools index {output.bam}"
+
+rule mosdepth_cov:
+    input:
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai"
+    output:
+        summary="{sample}.mosdepth.mosdepth.summary.txt",
+        global_dist="{sample}.mosdepth.mosdepth.global.dist.txt"
+    threads: 4
+    resources:
+        mem_mb=4096
+        disk_mb=2048
+    container: "quay.io/biocontainers/mosdepth:0.3.10--h4e814b3_1"
+    shell:
+        "mosdepth --threads {threads} --no-per-base {wildcards.sample}.mosdepth {input.bam}"
+
+rule clair3_call:
+    input:
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai",
+        reference=config["reference_fasta"],
+        reference_fai=config["reference_fasta_fai"]
+    output:
+        vcf="{sample}.clair3.vcf.gz",
+        vcf_index="{sample}.clair3.vcf.gz.tbi"
+    params:
+        platform=config["platform"],
+        model=config["clair3_model"]
+    threads: 8
+    resources:
+        mem_mb=24576
+        disk_mb=20480
+    container: "quay.io/biocontainers/clair3:1.1.0--py39hd649744_0"
+    shell:
+        "run_clair3.sh "
+        "--model={params.model} "
+        "--ref_fn={input.reference} "
+        "--bam_fn={input.bam} "
+        "--output=clair3_out "
+        "--threads={threads} "
+        "--platform={params.platform} "
+        "--sample_name={wildcards.sample} && "
+        "mv clair3_out/merge_output.vcf.gz {output.vcf} && "
+        "mv clair3_out/merge_output.vcf.gz.tbi {output.vcf_index} && "
+        "rm -rf clair3_out"
+
+rule bcftools_stats:
+    input:
+        vcf="{sample}.clair3.vcf.gz",
+        vcf_index="{sample}.clair3.vcf.gz.tbi"
+    output:
+        "{sample}.vcf.stats"
+    threads: 1
+    resources:
+        mem_mb=256
+        disk_mb=512
+    container: "quay.io/biocontainers/bcftools:1.10.2--h4f4756c_2"
+    shell:
+        "bcftools stats {input.vcf} > {output}"
+
+rule multiqc_report:
+    input:
+        summary="{sample}.mosdepth.mosdepth.summary.txt",
+        stats="{sample}.vcf.stats"
+    output:
+        report="{sample}_multiqc/multiqc_report.html"
+    threads: 1
+    resources:
+        mem_mb=2048
+        disk_mb=512
+    container: "quay.io/biocontainers/multiqc:1.28--pyhdfd78af_0"
+    shell:
+        "multiqc --force --outdir {wildcards.sample}_multiqc {input.summary} {input.stats}"

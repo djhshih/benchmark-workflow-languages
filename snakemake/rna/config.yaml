@@ -1,7 +1,9 @@
-samples:
-  - sample1
-  - sample2
-reference_index: "star_index"
-adapters: "adapters.fa"
-annotation: "annotation.gtf"
-reads: "*.fastq.gz"
+samples: [sample1, sample2]
+reference_index: /path/to/star/index/
+reference_fasta: /path/to/reference.fasta
+adapters: /path/to/adapters.fa
+annotation: /path/to/annotation.gtf
+strandedness: "NONE"
+reads:
+  sample1: sample1_R1.fastq.gz sample1_R2.fastq.gz
+  sample2: sample2_R1.fastq.gz sample2_R2.fastq.gz

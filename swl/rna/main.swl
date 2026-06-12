@@ -5,5 +5,4 @@ align = import "star.sh"
 fastqc = import "fastqc.sh"
 feature_counts = import "featurecounts.sh"
 
-# Workflow: trim -> align -> fastqc/featurecounts (parallel)
-trim | fastqc | align | feature_counts
+trim | fastqc & align | feature_counts

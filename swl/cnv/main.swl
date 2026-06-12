@@ -4,10 +4,10 @@ align = import "bwa-mem.sh"
 sort = import "sort-bam.sh"
 index = import "index-bam.sh"
 collect_counts = import "collectreadcounts.sh"
-collect_gc = import "collectgc.sh"
+collect_allelic_counts = import "collectalleliccounts.sh"
 denoise = import "denoisecoverage.sh"
-segment = import "segmentcnv.sh"
-call_cnv = import "callcnv.sh"
+model_segments = import "segmentcnv.sh"
+call_copy_ratio_segments = import "callcnv.sh"
 
-# Note: collect_counts and collect_gc run in parallel, then both feed into denoise
-align | sort | index | collect_counts | collect_gc | denoise | segment | call_cnv
+# Note: collect_counts and collect_allelic_counts run in parallel, both feeding into denoise
+align | sort | index | collect_counts & collect_allelic_counts | denoise | model_segments | call_copy_ratio_segments

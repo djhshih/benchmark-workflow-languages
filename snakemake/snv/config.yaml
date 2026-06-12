@@ -1,6 +1,13 @@
-samples:
-  - sample1
-  - sample2
-reference: "reference.fa"
-known_sites: []
-reads: "*.fastq.gz"
+samples: [sample1, sample2]
+reference: /path/to/reference.fasta
+reference_dict: /path/to/reference.dict
+reference_fai: /path/to/reference.fasta.fai
+known_sites:
+  - /path/to/known_sites_1.vcf.gz
+known_sites_indices:
+  - /path/to/known_sites_1.vcf.gz.tbi
+dbsnp_vcf: /path/to/dbsnp.vcf.gz
+dbsnp_vcf_index: /path/to/dbsnp.vcf.gz.tbi
+reads:
+  sample1: sample1_R1.fastq.gz sample1_R2.fastq.gz
+  sample2: sample2_R1.fastq.gz sample2_R2.fastq.gz

@@ -2,103 +2,161 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        expand("{sample}_cnv.vcf", sample=config["samples"])
+        expand("{sample}.called.seg", sample=config["samples"])
 
 rule bwa_mem:
     input:
-        reads=lambda wildcards: expand("{sample}_R1.fastq.gz", sample=config["samples"]),
-        reference=config["reference"]
+        r1=lambda wildcards: config["reads"][wildcards.sample].split()[0],
+        r2=lambda wildcards: config["reads"][wildcards.sample].split()[1],
+        reference=config["reference"],
+        reference_fai=config["reference_fai"]
     output:
-        "{sample}_alignment.sam"
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai"
+    params:
+        rg=lambda wildcards: "@RG\\tID:{wildcards.sample}\\tLB:1\\tPL:ILLUMINA\\tSM:{wildcards.sample}"
+    threads: 4
     resources:
-        cpu=4,
-        mem_mb=8192,
-        disk_mb=1024
+        mem_mb=8192
+        disk_mb=10240
+    container: "quay.io/biocontainers/mulled-v2-ad317f19f5881324e963f6a6d464d696a2825ab6:c59b7a73c87a9fe81737d5d628e10a3b5807f453-0"
     shell:
-        "bwa mem -t {resources.cpu} {input.reference} {input.reads[0]} {input.reads[1]} > {output}"
+        "bwa mem -t {threads} -R '{params.rg}' {input.reference} {input.r1} {input.r2} 2> {wildcards.sample}.bwa.log | "
+        "samtools sort -@ {threads-1} -m 2G -o {output.bam} - && "
+        "samtools index {output.bam}"
 
 rule sort_bam:
     input:
-        "{sample}_alignment.sam"
+        bam="{sample}.sorted.bam"
     output:
-        "{sample}_sorted.bam"
+        bam="{sample}.coordinate_sorted.bam",
+        bai="{sample}.coordinate_sorted.bam.bai"
+    threads: 4
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=8192
+        disk_mb=10240
+    container: "quay.io/biocontainers/samtools:1.21--h96c455f_1"
     shell:
-        "samtools sort -@ {resources.cpu} {input} -o {output}"
+        "samtools sort -@ {threads} -m 4G -o {output.bam} -T {wildcards.sample}.tmp {input.bam} && "
+        "samtools index {output.bam}"
 
 rule index_bam:
     input:
-        "{sample}_sorted.bam"
+        bam="{sample}.coordinate_sorted.bam"
     output:
-        "{sample}_sorted.bam.bai"
+        bai="{sample}.coordinate_sorted.bam.bai"
+    threads: 1
     resources:
-        cpu=1,
-        mem_mb=2048,
-        disk_mb=512
-    shell:
-        "samtools index {input}"
-
-rule collect_readcounts:
-    input:
-        bam="{sample}_sorted.bam",
-        reference=config["reference"]
-    output:
-        "{sample}_readcounts.tsv"
-    resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
-    shell:
-        "gatk CollectReadCounts -I {input.bam} -R {input.reference} -O {output}"
-
-rule collect_gc:
-    input:
-        reference=config["reference"]
-    output:
-        "gc.tsv"
-    resources:
-        cpu=1,
-        mem_mb=2048,
-        disk_mb=512
-    shell:
-        "gatk CountGC -R {input.reference} -O {output}"
-
-rule denoise_coverage:
-    input:
-        readcounts="{sample}_readcounts.tsv",
-        gc="gc.tsv"
-    output:
-        "{sample}_denoised.tsv"
-    resources:
-        cpu=4,
-        mem_mb=8192,
+        mem_mb=2048
         disk_mb=2048
+    container: "quay.io/biocontainers/samtools:1.21--h96c455f_1"
     shell:
-        "gatk DenoiseReadCounts --readcounts {input.readcounts} --gc-hdf5 {input.gc} --output-prefix {wildcards.sample}"
+        "samtools index {input.bam}"
 
-rule segment_cnv:
+rule collect_allelic_counts:
     input:
-        "{sample}_denoised.tsv"
+        bam="{sample}.coordinate_sorted.bam",
+        bai="{sample}.coordinate_sorted.bam.bai",
+        reference=config["reference"],
+        reference_dict=config["reference_dict"],
+        reference_fai=config["reference_fai"],
+        sites=config["common_variant_sites"],
+        sites_index=config["common_variant_sites_index"]
     output:
-        "{sample}_segments.tsv"
+        "{sample}.allelic_counts.tsv"
+    threads: 4
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=11264
+        disk_mb=5120
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "gatk SegmentDenoisedCopyRatios --denoised {input} -O {output}"
+        "gatk --java-options '-Xmx10G -XX:ParallelGCThreads=1' CollectAllelicCounts "
+        "-L {input.sites} "
+        "-I {input.bam} "
+        "-R {input.reference} "
+        "-O {output}"
 
-rule call_cnv:
+rule collect_read_counts:
     input:
-        "{sample}_segments.tsv"
+        bam="{sample}.coordinate_sorted.bam",
+        bai="{sample}.coordinate_sorted.bam.bai",
+        intervals=config["preprocessed_intervals"],
+        reference=config["reference"],
+        reference_dict=config["reference_dict"],
+        reference_fai=config["reference_fai"]
     output:
-        "{sample}_cnv.vcf"
+        "{sample}.read_counts.hdf5"
+    threads: 4
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=7680
+        disk_mb=5120
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "gatk ModelSegments --segments {input} -O {output}"
+        "gatk --java-options '-Xmx7G -XX:ParallelGCThreads=1' CollectReadCounts "
+        "-L {input.intervals} "
+        "-I {input.bam} "
+        "-R {input.reference} "
+        "--format HDF5 "
+        "--interval-merging-rule OVERLAPPING_ONLY "
+        "-O {output}"
+
+rule denoise_read_counts:
+    input:
+        counts="{sample}.read_counts.hdf5"
+    output:
+        denoised="{sample}.denoisedCR.tsv",
+        standardized="{sample}.standardizedCR.tsv"
+    params:
+        pon=config.get("pon", "")
+    threads: 2
+    resources:
+        mem_mb=5120
+        disk_mb=2048
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
+    run:
+        extra_args = ""
+        if params.pon:
+            extra_args = f"--count-panel-of-normals {params.pon}"
+        shell(
+            f"gatk --java-options '-Xmx4G -XX:ParallelGCThreads=1' DenoiseReadCounts "
+            f"-I {{input.counts}} "
+            f"{extra_args} "
+            f"--standardized-copy-ratios {{output.standardized}} "
+            f"--denoised-copy-ratios {{output.denoised}}"
+        )
+
+rule model_segments:
+    input:
+        denoised="{sample}.denoisedCR.tsv",
+        standardized="{sample}.standardizedCR.tsv",
+        allelic="{sample}.allelic_counts.tsv"
+    output:
+        modeled="{sample}.modelFinal.seg",
+        copy_ratio="{sample}.cr.seg",
+        allelic_seg="{sample}.af.seg"
+    threads: 4
+    resources:
+        mem_mb=5120
+        disk_mb=5120
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
+    shell:
+        "gatk --java-options '-Xmx4G -XX:ParallelGCThreads=1' ModelSegments "
+        "--denoised-copy-ratios {input.denoised} "
+        "--allelic-counts {input.allelic} "
+        "--output-prefix {wildcards.sample}. "
+        "-O ."
+
+rule call_copy_ratio_segments:
+    input:
+        segments="{sample}.cr.seg"
+    output:
+        "{sample}.called.seg"
+    threads: 2
+    resources:
+        mem_mb=3072
+        disk_mb=2048
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
+    shell:
+        "gatk --java-options '-Xmx2G -XX:ParallelGCThreads=1' CallCopyRatioSegments "
+        "-I {input.segments} "
+        "-O {output}"

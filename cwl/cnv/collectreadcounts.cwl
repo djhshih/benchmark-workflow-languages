@@ -1,32 +1,43 @@
 cwlVersion: v1.0
 class: CommandLineTool
-
-baseCommand: gatk CollectReadCounts
-
-# CWL resources
 requirements:
-  - class: ResourceRequirement
+  InlineJavascriptRequirement: {}
+  DockerRequirement:
+    dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
+  ResourceRequirement:
     coresMin: 2
     ramMin: 4096
-    outdirMin: 1024
-
-arguments:
-  - -I
-  - $(inputs.bam.path)
-  - -R
-  - $(inputs.reference.path)
-  - -L
-  - $(inputs.intervals.path)
-  - -O
-  - counts.tsv
-
+    diskMb: 5120
 inputs:
-  bam: File
-  reference: File
-  intervals: File
-
+  sample_name: string
+  bam:
+    type: File
+    inputBinding:
+      prefix: -I
+  bam_index: File
+  reference:
+    type: File
+    inputBinding:
+      prefix: -R
+  reference_fai: File
+  intervals:
+    type: File
+    inputBinding:
+      prefix: -L
 outputs:
-  counts:
+  read_counts:
     type: File
     outputBinding:
-      glob: "counts.tsv"
+      glob: "*.hdf5"
+baseCommand: [gatk]
+arguments:
+  - --java-options
+  - -Xmx7G
+  - -XX:ParallelGCThreads=1
+  - CollectReadCounts
+  - --interval-merging-rule
+  - OVERLAPPING_ONLY
+  - --format
+  - HDF5
+  - -O
+  - valueFrom: $(inputs.sample_name).counts.hdf5

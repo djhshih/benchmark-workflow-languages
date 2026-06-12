@@ -1,32 +1,56 @@
 cwlVersion: v1.0
 class: CommandLineTool
-
-baseCommand: java -jar gatk ApplyBQSR
-
-# CWL resources
 requirements:
-  - class: ResourceRequirement
+  InlineJavascriptRequirement: {}
+  DockerRequirement:
+    dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
+  ResourceRequirement:
     coresMin: 2
-    ramMin: 4096
-    outdirMin: 1024
-
-arguments:
-  - -I
-  - $(inputs.input.path)
-  - -R
-  - $(inputs.reference.path)
-  - --bqsr-recal-file
-  - $(inputs.recal_table.path)
-  - -O
-  - recalibrated.bam
-
+    ramMin: 2560
+    diskMb: 10240
 inputs:
-  input: File
+  input_bam:
+    type: File
+    inputBinding:
+      prefix: -I
+  input_bam_index: File
+  sample_name: string
   recal_table: File
-  reference: File
-
+  reference:
+    type: File
+    inputBinding:
+      prefix: -R
+  reference_dict: File
+  reference_fai: File
 outputs:
   recalibrated_bam:
     type: File
     outputBinding:
-      glob: "recalibrated.bam"
+      glob: "*.recalibrated.bam"
+  recalibrated_bam_index:
+    type: File
+    outputBinding:
+      glob: "*.recalibrated.bai"
+  recalibrated_bam_md5:
+    type: File
+    outputBinding:
+      glob: "*.md5"
+baseCommand: [gatk]
+arguments:
+  - --java-options
+  - -Xmx2048M
+  - -XX:ParallelGCThreads=1
+  - ApplyBQSR
+  - --create-output-bam-md5
+  - --add-output-sam-program-record
+  - --use-original-qualities
+  - -O
+  - valueFrom: $(inputs.sample_name).recalibrated.bam
+  - -bqsr
+  - valueFrom: $(inputs.recal_table)
+  - --static-quantized-quals
+  - "10"
+  - --static-quantized-quals
+  - "20"
+  - --static-quantized-quals
+  - "30"

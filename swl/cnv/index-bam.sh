@@ -1,12 +1,14 @@
 #@ Index BAM
 # in
-#   bam file
+#   input_bam file
 #   sample_name str
 # out
-#   bai file = ${sample_name}_sorted.bam.bai
+#   bam_index file = ${sample_name}.coordinate_sorted.bam.bai
 # run
 #   cpu = 1
 #   memory = 2048
-#   disk = 1024
+#   disk = 2048
+#   image = quay.io/biocontainers/samtools:1.21--h96c455f_1
 
-samtools index ${bam}
+set -e
+samtools index ${input_bam}

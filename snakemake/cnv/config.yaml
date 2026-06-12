@@ -1,5 +1,10 @@
-samples:
-  - sample1
-  - sample2
-reference: "reference.fa"
-reads: "*.fastq.gz"
+samples: [sample1]
+reference: /path/to/reference.fasta
+reference_dict: /path/to/reference.dict
+reference_fai: /path/to/reference.fasta.fai
+preprocessed_intervals: /path/to/intervals.interval_list
+common_variant_sites: /path/to/common_variants.vcf.gz
+common_variant_sites_index: /path/to/common_variants.vcf.gz.tbi
+pon: /path/to/PON.hdf5
+reads:
+  sample1: sample1_R1.fastq.gz sample1_R2.fastq.gz

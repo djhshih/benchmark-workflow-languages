@@ -1,0 +1,9 @@
+# Long-read Variant Calling Pipeline in SWL
+
+align = import "minimap2-map.sh"
+coverage = import "mosdepth.sh"
+caller = import "clair3.sh"
+vcf_stats = import "bcftools-stats.sh"
+report = import "multiqc.sh"
+
+align | coverage & caller | vcf_stats | report

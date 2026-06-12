@@ -6,51 +6,93 @@ rule all:
 
 rule trimmomatic:
     input:
-        reads=lambda wildcards: expand("{sample}_R1.fastq.gz", sample=config["samples"]),
+        r1=lambda wildcards: config["reads"][wildcards.sample].split()[0],
+        r2=lambda wildcards: config["reads"][wildcards.sample].split()[1],
         adapters=config["adapters"]
     output:
-        ["{sample}_trimmed_R1.fastq.gz", "{sample}_trimmed_R2.fastq.gz"]
+        r1_pe="{sample}_R1.trimmed.fastq.gz",
+        r2_pe="{sample}_R2.trimmed.fastq.gz",
+        r1_se="{sample}_R1.unpaired.fastq.gz",
+        r2_se="{sample}_R2.unpaired.fastq.gz"
+    threads: 2
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=4096
+        disk_mb=5120
+    container: "quay.io/biocontainers/trimmomatic:0.39--hdfd78af_7"
     shell:
-        "java -jar trimmomatic.jar PE {input.reads[0]} {input.reads[1]} {output[0]} {output[1]} ILLUMINACLIP:{input.adapters}:2:30:10"
+        "trimmomatic PE "
+        "-threads {threads} "
+        "{input.r1} {input.r2} "
+        "{output.r1_pe} {output.r1_se} "
+        "{output.r2_pe} {output.r2_se} "
+        "ILLUMINACLIP:{input.adapters}:2:30:10 "
+        "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
 
 rule star:
     input:
-        reads=lambda wildcards: [f"{wildcards.sample}_trimmed_R1.fastq.gz", f"{wildcards.sample}_trimmed_R2.fastq.gz"],
-        reference_index=config["reference_index"]
+        r1="{sample}_R1.trimmed.fastq.gz",
+        r2="{sample}_R2.trimmed.fastq.gz",
+        index_dir=config["reference_index"],
+        fasta=config["reference_fasta"]
     output:
-        "{sample}_alignment.bam"
+        bam="star_{sample}/Aligned.sortedByCoord.out.bam",
+        log="star_{sample}/Log.final.out"
+    params:
+        rg=lambda wildcards: "ID:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:ILLUMINA\\tSM:{wildcards.sample}"
+    threads: 8
     resources:
-        cpu=8,
-        mem_mb=32768,
-        disk_mb=10240
+        mem_mb=32768
+        disk_mb=20480
+    container: "quay.io/biocontainers/star:2.7.3a--0"
     shell:
-        "STAR --runMode alignReads --runThreadN {resources.cpu} --genomeDir {input.reference_index} --readFilesIn {input.reads[0]} {input.reads[1]} --outFileNamePrefix {wildcards.sample}_"
+        "mkdir -p star_{wildcards.sample} && "
+        "STAR "
+        "--runMode alignReads "
+        "--genomeDir {input.index_dir} "
+        "--readFilesIn {input.r1} {input.r2} "
+        "--readFilesCommand zcat "
+        "--runThreadN {threads} "
+        "--outFileNamePrefix star_{wildcards.sample}/ "
+        "--outSAMtype BAM SortedByCoordinate "
+        "--outBAMcompression 1 "
+        "--outSAMunmapped Within KeepPairs "
+        "--twopassMode Basic "
+        "--outSAMattrRGline {params.rg}"
 
 rule fastqc:
     input:
-        reads=lambda wildcards: [f"{wildcards.sample}_trimmed_R1.fastq.gz", f"{wildcards.sample}_trimmed_R2.fastq.gz"]
+        r1="{sample}_R1.trimmed.fastq.gz",
+        r2="{sample}_R2.trimmed.fastq.gz"
     output:
-        ["{sample}_trimmed_R1_fastqc.html", "{sample}_trimmed_R2_fastqc.html"]
+        html="fastqc_{sample}/{sample}_R1.trimmed_fastqc.html",
+        zip="fastqc_{sample}/{sample}_R1.trimmed_fastqc.zip"
+    threads: 2
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=512
+        mem_mb=4096
+        disk_mb=2048
+    container: "quay.io/biocontainers/fastqc:0.11.9--0"
     shell:
-        "fastqc --outdir . {input.reads[0]} {input.reads[1]}"
+        "mkdir -p fastqc_{wildcards.sample} && "
+        "fastqc --outdir fastqc_{wildcards.sample} --threads {threads} {input.r1} {input.r2}"
 
 rule featurecounts:
     input:
-        alignment="{sample}_alignment.bam",
+        bam="star_{sample}/Aligned.sortedByCoord.out.bam",
         annotation=config["annotation"]
     output:
-        "{sample}_counts.txt"
+        counts="{sample}_counts.txt",
+        summary="{sample}_counts.txt.summary"
+    params:
+        stranded=lambda wildcards: "1" if config.get("strandedness") == "YES" else "2" if config.get("strandedness") == "REVERSE" else "0"
+    threads: 4
     resources:
-        cpu=4,
-        mem_mb=8192,
-        disk_mb=1024
+        mem_mb=8192
+        disk_mb=5120
+    container: "quay.io/biocontainers/subread:2.0.1--hed695b0_0"
     shell:
-        "featureCounts -T {resources.cpu} -a {input.annotation} -o {output} {input.alignment}"
+        "featureCounts "
+        "-T {threads} "
+        "-a {input.annotation} "
+        "-s {params.stranded} "
+        "-o {output.counts} "
+        "{input.bam}"

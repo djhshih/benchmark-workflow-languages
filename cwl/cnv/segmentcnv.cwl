@@ -1,27 +1,42 @@
 cwlVersion: v1.0
 class: CommandLineTool
-
-baseCommand: gatk SegmentDenoisedCopyRatios
-
-# CWL resources
 requirements:
-  - class: ResourceRequirement
-    coresMin: 2
-    ramMin: 4096
-    outdirMin: 1024
-
-arguments:
-  - --denoised-copy-ratios
-  - $(inputs.denoised_cr.path)
-  - -O
-  - segments.tsv
-
+  InlineJavascriptRequirement: {}
+  DockerRequirement:
+    dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
+  ResourceRequirement:
+    coresMin: 4
+    ramMin: 5120
+    diskMb: 5120
 inputs:
-  denoised_cr: File
-  intervals: File
-
+  sample_name: string
+  denoised_copy_ratios:
+    type: File
+    inputBinding:
+      prefix: --denoised-copy-ratios
+  allelic_counts:
+    type: File
+    inputBinding:
+      prefix: --allelic-counts
 outputs:
-  segments:
+  copy_ratio_segments:
     type: File
     outputBinding:
-      glob: "segments.tsv"
+      glob: "*.cr.seg"
+  model_segments:
+    type: File
+    outputBinding:
+      glob: "*.modelFinal.seg"
+  allele_fraction_segments:
+    type: File
+    outputBinding:
+      glob: "*.af.seg"
+baseCommand: [gatk]
+arguments:
+  - --java-options
+  - -Xmx4G
+  - -XX:ParallelGCThreads=1
+  - ModelSegments
+  - valueFrom: --output-prefix=$(inputs.sample_name)
+  - -O
+  - ./

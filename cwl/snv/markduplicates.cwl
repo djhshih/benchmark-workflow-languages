@@ -1,31 +1,40 @@
 cwlVersion: v1.0
 class: CommandLineTool
-
-baseCommand: java -jar picard.jar MarkDuplicates
-
-# CWL resources
 requirements:
-  - class: ResourceRequirement
+  DockerRequirement:
+    dockerPull: quay.io/biocontainers/picard:3.3.0--hdfd78af_0
+  ResourceRequirement:
     coresMin: 2
-    ramMin: 4096
-    outdirMin: 1024
-
-arguments:
-  - I=$(inputs.alignment.path)
-  - O=deduped.bam
-  - M=metrics.txt
-  - CREATE_INDEX=true
-
+    ramMin: 7168
+    diskMb: 10240
 inputs:
-  alignment: File
+  input_bam: File
+  input_bam_index: File
   sample_name: string
-
 outputs:
   deduped_bam:
     type: File
     outputBinding:
-      glob: "deduped.bam"
+      glob: "*.deduped.bam"
+  deduped_bam_index:
+    type: File
+    outputBinding:
+      glob: "*.deduped.bai"
   metrics:
     type: File
     outputBinding:
-      glob: "metrics.txt"
+      glob: "*.metrics.txt"
+baseCommand: [picard]
+arguments:
+  - position: 0
+    valueFrom: MarkDuplicates
+  - prefix: "INPUT="
+    valueFrom: $(inputs.input_bam)
+  - prefix: "OUTPUT="
+    valueFrom: $(inputs.sample_name).deduped.bam
+  - prefix: "METRICS_FILE="
+    valueFrom: $(inputs.sample_name).metrics.txt
+  - valueFrom: CREATE_INDEX=true
+  - valueFrom: VALIDATION_STRINGENCY=SILENT
+  - valueFrom: OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500
+  - valueFrom: CLEAR_DT=false

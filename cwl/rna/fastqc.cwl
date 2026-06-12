@@ -1,29 +1,32 @@
 cwlVersion: v1.0
 class: CommandLineTool
-
-baseCommand: fastqc
-
 requirements:
-  - class: ResourceRequirement
+  InlineJavascriptRequirement: {}
+  DockerRequirement:
+    dockerPull: quay.io/biocontainers/fastqc:0.11.9--0
+  ResourceRequirement:
     coresMin: 2
     ramMin: 4096
-    outdirMin: 512
-
-arguments:
-  - "--outdir"
-  - $(inputs.output_dir.path)
-
+    diskMb: 2048
 inputs:
+  sample_name: string
   reads:
-    type:
-      type: array
-      items: File
-  output_dir: Directory
-
+    type: array
+    items: File
 outputs:
   reports:
-    type:
-      type: array
-      items: File
+    type: array
+    items: File
     outputBinding:
-      glob: "*.html"
+      glob: "fastqc_*/*.html"
+  zip_reports:
+    type: array
+    items: File
+    outputBinding:
+      glob: "*_fastqc.zip"
+baseCommand: [fastqc]
+arguments:
+  - valueFrom: --outdir=fastqc_$(inputs.sample_name)
+  - valueFrom: --threads=$(runtime.cores)
+  - valueFrom: $(inputs.reads[0])
+  - valueFrom: $(inputs.reads[1])

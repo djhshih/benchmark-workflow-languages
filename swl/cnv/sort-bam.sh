@@ -1,12 +1,16 @@
 #@ Sort BAM
 # in
-#   sam file
+#   input_bam file
 #   sample_name str
 # out
-#   bam file = ${sample_name}_sorted.bam
+#   sorted_bam file = ${sample_name}.coordinate_sorted.bam
+#   sorted_bam_index file = ${sample_name}.coordinate_sorted.bam.bai
 # run
-#   cpu = 2
+#   cpu = 4
 #   memory = 4096
-#   disk = 1024
+#   disk = 10240
+#   image = quay.io/biocontainers/samtools:1.21--h96c455f_1
 
-samtools sort -o ${sample_name}_sorted.bam ${sam}
+set -e
+samtools sort -@ ${cpu} -m 4G -o ${sample_name}.coordinate_sorted.bam -T ${sample_name}.tmp ${input_bam}
+samtools index ${sample_name}.coordinate_sorted.bam

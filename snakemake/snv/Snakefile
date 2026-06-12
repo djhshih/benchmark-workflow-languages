@@ -2,84 +2,149 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        expand("{sample}_variants.filtered.vcf", sample=config["samples"])
+        expand("{sample}.variant_filter.vcf.gz", sample=config["samples"])
 
 rule bwa_mem:
     input:
-        reads=lambda wildcards: expand("{sample}_R1.fastq.gz", sample=config["samples"]) if wildcards.sample == config["samples"][0] else [],
+        r1=lambda wildcards: config["reads"][wildcards.sample].split()[0],
+        r2=lambda wildcards: config["reads"][wildcards.sample].split()[1],
         reference=config["reference"]
     output:
-        "{sample}_alignment.sam"
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai"
+    params:
+        rg=lambda wildcards: "@RG\\tID:{wildcards.sample}\\tLB:1\\tPL:ILLUMINA\\tSM:{wildcards.sample}"
+    threads: 4
     resources:
-        cpu=4,
-        mem_mb=8192,
-        disk_mb=1024
+        mem_mb=8192
+        disk_mb=10240
+    container: "quay.io/biocontainers/mulled-v2-ad317f19f5881324e963f6a6d464d696a2825ab6:c59b7a73c87a9fe81737d5d628e10a3b5807f453-0"
     shell:
-        "bwa mem -t {resources.cpu} {input.reference} {input.reads[0]} {input.reads[1]} > {output}"
+        "bwa mem -t {threads} -R '{params.rg}' {input.reference} {input.r1} {input.r2} 2> {wildcards.sample}.bwa.log | "
+        "samtools sort -@ {threads-1} -m 2G -o {output.bam} - && "
+        "samtools index {output.bam}"
 
 rule mark_duplicates:
     input:
-        "{sample}_alignment.sam"
+        bam="{sample}.sorted.bam",
+        bai="{sample}.sorted.bam.bai"
     output:
-        "{sample}_deduped.bam"
+        bam="{sample}.deduped.bam",
+        bai="{sample}.deduped.bai",
+        metrics="{sample}.deduped.metrics.txt"
+    threads: 2
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=7168
+        disk_mb=10240
+    container: "quay.io/biocontainers/picard:3.3.0--hdfd78af_0"
     shell:
-        "java -jar picard.jar MarkDuplicates I={input} O={output} M={wildcards.sample}_metrics.txt"
+        "picard MarkDuplicates "
+        "INPUT={input.bam} "
+        "OUTPUT={output.bam} "
+        "METRICS_FILE={output.metrics} "
+        "CREATE_INDEX=true "
+        "VALIDATION_STRINGENCY=SILENT "
+        "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 "
+        "CLEAR_DT=false "
 
 rule base_recalibrator:
     input:
-        bam="{sample}_deduped.bam",
-        reference=config["reference"]
+        bam="{sample}.deduped.bam",
+        bai="{sample}.deduped.bai",
+        reference=config["reference"],
+        reference_dict=config["reference_dict"],
+        reference_fai=config["reference_fai"],
+        dbsnp=config["dbsnp_vcf"]
     output:
-        "{sample}_recal.table"
+        "{sample}.recal.table"
+    threads: 2
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
-    params:
-        known_sites=config.get("known_sites", [])
+        mem_mb=1536
+        disk_mb=5120
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "java -jar gatk BaseRecalibrator -I {input.bam} -R {input.reference} -O {output}"
+        "gatk --java-options '-Xmx1024M -XX:ParallelGCThreads=1' BaseRecalibrator "
+        "--use-original-qualities "
+        "-I {input.bam} "
+        "-R {input.reference} "
+        "--known-sites {input.dbsnp} "
+        "-O {output}"
 
 rule apply_bqsr:
     input:
-        bam="{sample}_deduped.bam",
-        recal_table="{sample}_recal.table",
-        reference=config["reference"]
+        bam="{sample}.deduped.bam",
+        bai="{sample}.deduped.bai",
+        recal_table="{sample}.recal.table",
+        reference=config["reference"],
+        reference_fai=config["reference_fai"]
     output:
-        "{sample}_recalibrated.bam"
+        bam="{sample}.recalibrated.bam",
+        bai="{sample}.recalibrated.bai",
+        md5="{sample}.recalibrated.bam.md5"
+    threads: 2
     resources:
-        cpu=2,
-        mem_mb=4096,
-        disk_mb=1024
+        mem_mb=2560
+        disk_mb=10240
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "java -jar gatk ApplyBQSR -I {input.bam} -R {input.reference} --bqsr-recal-file {input.recal_table} -O {output}"
+        "gatk --java-options '-Xmx2048M -XX:ParallelGCThreads=1' ApplyBQSR "
+        "--create-output-bam-md5 "
+        "--add-output-sam-program-record "
+        "-R {input.reference} "
+        "-I {input.bam} "
+        "--use-original-qualities "
+        "-O {output.bam} "
+        "-bqsr {input.recal_table} "
+        "--static-quantized-quals 10 "
+        "--static-quantized-quals 20 "
+        "--static-quantized-quals 30"
 
 rule haplotype_caller:
     input:
-        bam="{sample}_recalibrated.bam",
-        reference=config["reference"]
+        bam="{sample}.recalibrated.bam",
+        bai="{sample}.recalibrated.bai",
+        reference=config["reference"],
+        reference_fai=config["reference_fai"]
     output:
-        "{sample}_variants.g.vcf"
+        vcf="{sample}.g.vcf.gz",
+        vcf_index="{sample}.g.vcf.gz.tbi"
+    threads: 4
     resources:
-        cpu=4,
-        mem_mb=8192,
-        disk_mb=1024
+        mem_mb=4608
+        disk_mb=10240
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "java -jar gatk HaplotypeCaller -I {input.bam} -R {input.reference} -O {output}"
+        "gatk --java-options '-Xmx4096M -XX:ParallelGCThreads=1' HaplotypeCaller "
+        "-R {input.reference} "
+        "-I {input.bam} "
+        "-O {output.vcf} "
+        "--emit-ref-confidence GVCF"
 
 rule variant_filter:
     input:
-        variants="{sample}_variants.g.vcf",
-        reference=config["reference"]
+        vcf="{sample}.g.vcf.gz",
+        vcf_index="{sample}.g.vcf.gz.tbi",
+        reference=config["reference"],
+        reference_fai=config["reference_fai"],
+        dbsnp=config["dbsnp_vcf"],
+        dbsnp_index=config["dbsnp_vcf_index"]
     output:
-        "{sample}_variants.filtered.vcf"
+        filtered="{sample}.variant_filter.vcf.gz",
+        filtered_index="{sample}.variant_filter.vcf.gz.tbi",
+        tranches="{sample}.tranches",
+        rscript="{sample}.plots.R"
+    threads: 4
     resources:
-        cpu=4,
-        mem_mb=8192,
-        disk_mb=1024
+        mem_mb=8704
+        disk_mb=5120
+    container: "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     shell:
-        "java -jar gatk VariantRecalibrator -V {input.variants} -R {input.reference} -O {output}"
+        "gatk --java-options '-Xmx8192M -XX:ParallelGCThreads=1' VariantRecalibrator "
+        "-R {input.reference} "
+        "-V {input.vcf} "
+        "--resource:dbsnp,known=false,training=true,truth=true,prior=15.0 {input.dbsnp} "
+        "-O {output.filtered} "
+        "--tranches-file {output.tranches} "
+        "--rscript-file {output.rscript} "
+        "--tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 90.0 "
+        "--max-gaussians 4"
