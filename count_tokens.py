@@ -241,12 +241,12 @@ def count_py_tokens(content):
         if stripped.startswith('TOOLS'):
             in_tools = True
             tools_start = i
-            brace_count = 0
+            brace_count = stripped.count('{') - stripped.count('}')
             continue
         
         if in_tools:
             brace_count += stripped.count('{') - stripped.count('}')
-            if brace_count == 0 and '{' in lines[i]:
+            if brace_count <= 0:
                 tools_end = i
                 in_tools = False
                 continue
@@ -432,17 +432,27 @@ def extract_bash_tokens(content, language):
         return len(get_token_list('\n'.join(bash_lines), 'nf'))
     
     if language == 'wdl':
-        for i, line in enumerate(lines):
-            stripped = line.strip()
+        i = 0
+        while i < len(lines):
+            stripped = lines[i].strip()
             if stripped.startswith('command'):
-                in_bash = True
-                j = i + 1
-                while j < len(lines):
-                    if '>>>' in lines[j]:
-                        break
-                    if lines[j].strip() and not lines[j].strip().startswith('>'):
-                        bash_lines.append(lines[j])
-                    j += 1
+                if '>>>' in stripped:
+                    j = i + 1
+                    while j < len(lines):
+                        if '>>>' in lines[j]:
+                            break
+                        if lines[j].strip() and not lines[j].strip().startswith('>'):
+                            bash_lines.append(lines[j])
+                        j += 1
+                else:
+                    brace_count = stripped.count('{') - stripped.count('}')
+                    j = i + 1
+                    while j < len(lines) and brace_count > 0:
+                        brace_count += lines[j].count('{') - lines[j].count('}')
+                        if brace_count > 0:
+                            bash_lines.append(lines[j])
+                        j += 1
+            i += 1
         return len(get_token_list('\n'.join(bash_lines), 'wdl'))
     
     if language == 'py':
@@ -492,7 +502,7 @@ def extract_bash_tokens(content, language):
     return 0
 
 def main():
-    workflows = ['snv', 'cnv', 'rna']
+    workflows = ['snv', 'cnv', 'rna', 'long-read']
     languages = ['cwl', 'nf', 'wdl', 'py', 'ncl', 'swl', 'nix', 'smk']
     
     results = defaultdict(lambda: {'lines': 0, 'tokens': 0, 'workflow_tokens': 0, 'task_tokens': 0, 'bash_tokens': 0, 'files': [], 'token_lists': {}})
