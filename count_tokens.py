@@ -369,8 +369,7 @@ def count_snakemake_tokens(content):
     
     # Find rule all block - put in WORKFLOW (the entry point/orchestration)
     for start, end in rule_blocks:
-        rule_content = '\n'.join(lines[start:end+1])
-        if 'all' in rule_content:
+        if lines[start].strip().startswith('rule all'):
             for i in range(start, end + 1):
                 wf_lines.append(lines[i])
             break
@@ -386,9 +385,8 @@ def count_snakemake_tokens(content):
     # Get task content - all rule blocks except rule all (each rule is a task)
     task_content = ''
     for start, end in rule_blocks:
-        rule_content = '\n'.join(lines[start:end+1])
-        if 'all' not in rule_content:
-            task_content += '\n' + rule_content
+        if not lines[start].strip().startswith('rule all'):
+            task_content += '\n' + '\n'.join(lines[start:end+1])
     
     task_tokens = len(get_token_list(task_content, 'smk'))
     
@@ -635,44 +633,6 @@ def main():
                     results[(workflow, lang)]['tokens'] += tokens
                     results[(workflow, lang)]['token_lists'][str(file_path)] = token_list
     
-    print("")
-    print("INDIVIDUAL WORKFLOWS")
-    print("-" * 98)
-    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Lines':>7} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9} {'Bash':>8}")
-    print("-" * 98)
-    
-    total_tokens = defaultdict(int)
-    total_wf = defaultdict(int)
-    total_tools = defaultdict(int)
-    total_bash = defaultdict(int)
-    total_lines = defaultdict(int)
-    
-    for workflow in workflows:
-        for lang in languages:
-            key = (workflow, lang)
-            data = results[key]
-            if data['files']:
-                file_count = len(data['files'])
-                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['lines']:>7} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9} {data['bash_tokens']:>8}")
-                total_lines[lang] += data['lines']
-                total_tokens[lang] += data['tokens']
-                total_wf[lang] += data['workflow_tokens']
-                total_tools[lang] += data['task_tokens']
-                total_bash[lang] += data['bash_tokens']
-    
-    print("-" * 98)
-    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_lines.values()):>7} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9} {sum(total_bash.values()):>8}")
-    print()
-    
-    print("Summary by language:")
-    print("-" * 80)
-    print(f"{'Language':<10} {'Lines':<8} {'Tokens':<10} {'Bash Tok':<10} {'WF Tok':<10} {'Task Tok':<10} {'Non-Bash':<10}")
-    print("-" * 80)
-    for lang in languages:
-        if total_tokens[lang] > 0:
-            non_bash = total_tokens[lang] - total_bash[lang]
-            print(f"{lang:<10} {total_lines[lang]:<8} {total_tokens[lang]:<10} {total_bash[lang]:<10} {total_wf[lang]:<10} {total_tools[lang]:<10} {non_bash:<10}")
-
     # Print comprehensive token lists for each language
     print()
     print("=" * 100)
@@ -697,9 +657,50 @@ def main():
                 filename = filepath.split('/')[-1]
                 unique_tokens = sorted(set(token_list))
                 print(f"\n{filename} ({len(token_list)} tokens, {len(unique_tokens)} unique):")
-                # Print unique tokens: token (1), token (2), ...
                 token_strs = [f"{t} ({i+1})" for i, t in enumerate(unique_tokens)]
                 print("  " + ", ".join(token_strs))
+    
+    total_tokens = defaultdict(int)
+    total_wf = defaultdict(int)
+    total_tools = defaultdict(int)
+    total_bash = defaultdict(int)
+    total_lines = defaultdict(int)
+    wf_count = defaultdict(int)
+    
+    print()
+    print("INDIVIDUAL WORKFLOWS")
+    print("-" * 98)
+    print(f"{'Workflow':<10} {'Language':<10} {'Files':>6} {'Lines':>7} {'Tokens':>8} {'WF Tok':>8} {'Task Tok':>9} {'Bash':>8}")
+    print("-" * 98)
+    
+    for workflow in workflows:
+        for lang in languages:
+            key = (workflow, lang)
+            data = results[key]
+            if data['files']:
+                file_count = len(data['files'])
+                print(f"{workflow:<10} {lang:<10} {file_count:>6} {data['lines']:>7} {data['tokens']:>8} {data['workflow_tokens']:>8} {data['task_tokens']:>9} {data['bash_tokens']:>8}")
+                total_lines[lang] += data['lines']
+                total_tokens[lang] += data['tokens']
+                total_wf[lang] += data['workflow_tokens']
+                total_tools[lang] += data['task_tokens']
+                total_bash[lang] += data['bash_tokens']
+                wf_count[lang] += 1
+    
+    print("-" * 98)
+    print(f"{'TOTAL':<10} {'':<10} {sum([len(results[(w,l)]['files']) for w in workflows for l in languages if results[(w,l)]['files']]):>6} {sum(total_lines.values()):>7} {sum(total_tokens.values()):>8} {sum(total_wf.values()):>8} {sum(total_tools.values()):>9} {sum(total_bash.values()):>8}")
+    print()
+    
+    print("Summary by language:")
+    print("-" * 90)
+    print(f"{'Language':<10} {'Lines':<8} {'Tokens':<10} {'Bash Tok':<10} {'WF Tok':<10} {'Task Tok':<10} {'Non-Bash':<10} {'Avg NB':>8}")
+    print("-" * 90)
+    for lang in languages:
+        if total_tokens[lang] > 0:
+            non_bash = total_tokens[lang] - total_bash[lang]
+            count = wf_count[lang]
+            avg_non_bash = non_bash // count if count else 0
+            print(f"{lang:<10} {total_lines[lang]:<8} {total_tokens[lang]:<10} {total_bash[lang]:<10} {total_wf[lang]:<10} {total_tools[lang]:<10} {non_bash:<10} {avg_non_bash:>8}")
     
     # Write per-file granular results to CSV
     import csv
