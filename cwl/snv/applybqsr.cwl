@@ -9,17 +9,11 @@ requirements:
     ramMin: 2560
     diskMb: 10240
 inputs:
-  input_bam:
-    type: File
-    inputBinding:
-      prefix: -I
+  input_bam: File
   input_bam_index: File
   sample_name: string
   recal_table: File
-  reference:
-    type: File
-    inputBinding:
-      prefix: -R
+  reference: File
   reference_dict: File
   reference_fai: File
 outputs:
@@ -35,22 +29,12 @@ outputs:
     type: File
     outputBinding:
       glob: "*.md5"
-baseCommand: [gatk]
+baseCommand: ["bash"]
 arguments:
-  - --java-options
-  - -Xmx2048M
-  - -XX:ParallelGCThreads=1
-  - ApplyBQSR
-  - --create-output-bam-md5
-  - --add-output-sam-program-record
-  - --use-original-qualities
-  - -O
-  - valueFrom: $(inputs.sample_name).recalibrated.bam
-  - -bqsr
-  - valueFrom: $(inputs.recal_table)
-  - --static-quantized-quals
-  - "10"
-  - --static-quantized-quals
-  - "20"
-  - --static-quantized-quals
-  - "30"
+  - valueFrom: >-
+      gatk --java-options '-Xmx2048M -XX:ParallelGCThreads=1' ApplyBQSR
+      --create-output-bam-md5 --add-output-sam-program-record -R $(inputs.reference)
+      -I $(inputs.input_bam) --use-original-qualities -O $(inputs.sample_name).recalibrated.bam
+      -bqsr $(inputs.recal_table) --static-quantized-quals 10 --static-quantized-quals 20
+      --static-quantized-quals 30
+    shellQuote: false

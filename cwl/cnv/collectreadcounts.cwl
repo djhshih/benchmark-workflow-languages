@@ -5,39 +5,31 @@ requirements:
   DockerRequirement:
     dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
   ResourceRequirement:
-    coresMin: 2
-    ramMin: 4096
+    coresMin: 4
+    ramMin: 7680
     diskMb: 5120
 inputs:
   sample_name: string
   bam:
     type: File
-    inputBinding:
-      prefix: -I
   bam_index: File
-  reference:
-    type: File
-    inputBinding:
-      prefix: -R
+  reference: File
   reference_fai: File
-  intervals:
-    type: File
-    inputBinding:
-      prefix: -L
+  intervals: File
 outputs:
   read_counts:
     type: File
     outputBinding:
-      glob: "*.hdf5"
-baseCommand: [gatk]
+      glob: "*.read_counts.hdf5"
+baseCommand: ["bash"]
 arguments:
-  - --java-options
-  - -Xmx7G
-  - -XX:ParallelGCThreads=1
-  - CollectReadCounts
-  - --interval-merging-rule
-  - OVERLAPPING_ONLY
-  - --format
-  - HDF5
-  - -O
-  - valueFrom: $(inputs.sample_name).counts.hdf5
+  - valueFrom: >-
+      gatk --java-options '-Xmx7G -XX:ParallelGCThreads=1'
+      CollectReadCounts
+      -L $(inputs.intervals)
+      -I $(inputs.bam)
+      -R $(inputs.reference)
+      --format HDF5
+      --interval-merging-rule OVERLAPPING_ONLY
+      -O $(inputs.sample_name).read_counts.hdf5
+    shellQuote: false

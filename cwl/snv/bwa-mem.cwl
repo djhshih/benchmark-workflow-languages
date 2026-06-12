@@ -31,7 +31,6 @@ outputs:
 baseCommand: ["bash"]
 arguments:
   - valueFrom: >-
-      set -e &&
       bwa mem -t $(runtime.cores) -R "@RG\tID:$(inputs.sample_name)\tLB:1\tPL:ILLUMINA\tSM:$(inputs.sample_name)"
       $(inputs.reference) $(inputs.reads[0]) $(inputs.reads[1])
       2> $(inputs.sample_name).bwa.log |

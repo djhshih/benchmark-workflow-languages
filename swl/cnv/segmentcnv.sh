@@ -15,5 +15,4 @@
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
 set -e
-mkdir -p ${sample_name}
-gatk --java-options "-Xmx7168M" ModelSegments --denoised-copy-ratios ${denoised_cr} --allelic-counts ${allelic_counts} --output-prefix ${sample_name}. -O .
+gatk --java-options "-Xmx4G -XX:ParallelGCThreads=1" ModelSegments --denoised-copy-ratios ${denoised_cr} --allelic-counts ${allelic_counts} --output-prefix ${sample_name}. -O .

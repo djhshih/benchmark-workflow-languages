@@ -33,7 +33,7 @@ arguments:
   - prefix: "OUTPUT="
     valueFrom: $(inputs.sample_name).deduped.bam
   - prefix: "METRICS_FILE="
-    valueFrom: $(inputs.sample_name).metrics.txt
+    valueFrom: $(inputs.sample_name).deduped.metrics.txt
   - valueFrom: CREATE_INDEX=true
   - valueFrom: VALIDATION_STRINGENCY=SILENT
   - valueFrom: OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500

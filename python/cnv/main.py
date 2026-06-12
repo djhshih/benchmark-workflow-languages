@@ -45,7 +45,7 @@ TOOLS = {
     ),
     "sort_bam": Tool(
         name="sort_bam",
-        base_command='samtools sort -@ {cpu} -m 4G -o {sample}.coordinate_sorted.bam -T {sample}.tmp {bam}',
+        base_command='samtools sort -@ {cpu} -m 4G -o {sample}.coordinate_sorted.bam -T {sample}.tmp {bam} && samtools index {sample}.coordinate_sorted.bam',
         docker_image="quay.io/biocontainers/samtools:1.21--h96c455f_1",
         inputs={"input_bam": "File", "sample_name": "string"},
         outputs={"sorted_bam": "{sample}.coordinate_sorted.bam"},
@@ -77,7 +77,7 @@ TOOLS = {
     ),
     "denoise_read_counts": Tool(
         name="denoise_read_counts",
-        base_command='gatk --java-options "-Xmx4G -XX:ParallelGCThreads=1" DenoiseReadCounts -I {counts} --count-panel-of-normals {pon} --standardized-copy-ratios {sample}.standardizedCR.tsv --denoised-copy-ratios {sample}.denoisedCR.tsv',
+        base_command='gatk --java-options "-Xmx4G -XX:ParallelGCThreads=1" DenoiseReadCounts -I {counts} {pon_args} --standardized-copy-ratios {sample}.standardizedCR.tsv --denoised-copy-ratios {sample}.denoisedCR.tsv',
         docker_image=GATK_DOCKER,
         inputs={"read_counts": "File", "sample_name": "string", "pon": "File"},
         outputs={"denoised_cr": "{sample}.denoisedCR.tsv", "standardized_cr": "{sample}.standardizedCR.tsv"},

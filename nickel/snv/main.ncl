@@ -27,7 +27,7 @@ let
 
   bwa_mem = Task
     "bwa_mem"
-    "bwa mem -t ${to_string resources.cpu} -R \"@RG\\tID:${inputs.sample_name}\\tLB:1\\tPL:ILLUMINA\\tSM:${inputs.sample_name}\" ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]} 2> ${inputs.sample_name}.bwa.log | samtools sort -@ ${to_string (resources.cpu - 1)} -m 2G -o ${inputs.sample_name}.sorted.bam - ; samtools index ${inputs.sample_name}.sorted.bam"
+    "bwa mem -t ${to_string resources.cpu} -R \"@RG\\tID:${inputs.sample_name}\\tLB:1\\tPL:ILLUMINA\\tSM:${inputs.sample_name}\" ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]} 2> ${inputs.sample_name}.bwa.log | samtools sort -@ ${to_string (resources.cpu - 1)} -m 2G -o ${inputs.sample_name}.sorted.bam - && samtools index ${inputs.sample_name}.sorted.bam"
     "quay.io/biocontainers/mulled-v2-ad317f19f5881324e963f6a6d464d696a2825ab6:c59b7a73c87a9fe81737d5d628e10a3b5807f453-0"
     { sample_name = "string"; reads = "array"; reference = "file"; }
     { output_bam = "${inputs.sample_name}.sorted.bam"; output_bam_index = "${inputs.sample_name}.sorted.bam.bai"; bwa_log = "${inputs.sample_name}.bwa.log"; }
@@ -35,7 +35,7 @@ let
 
   markduplicates = Task
     "mark_duplicates"
-    "picard -Xmx6656M -XX:ParallelGCThreads=1 MarkDuplicates INPUT=${inputs.input_bam} OUTPUT=${inputs.sample_name}.deduped.bam METRICS_FILE=${inputs.sample_name}.deduped.metrics.txt CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 CLEAR_DT=false ADD_PG_TAG_TO_READS=false"
+    "picard MarkDuplicates INPUT=${inputs.input_bam} OUTPUT=${inputs.sample_name}.deduped.bam METRICS_FILE=${inputs.sample_name}.deduped.metrics.txt CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 CLEAR_DT=false"
     "quay.io/biocontainers/picard:3.3.0--hdfd78af_0"
     { input_bam = "file"; input_bam_index = "file"; sample_name = "string"; }
     { deduped_bam = "${inputs.sample_name}.deduped.bam"; deduped_bam_index = "${inputs.sample_name}.deduped.bai"; metrics = "${inputs.sample_name}.deduped.metrics.txt"; }
@@ -43,7 +43,7 @@ let
 
   baserecalibrator = Task
     "base_recalibrator"
-    "gatk --java-options \"-Xmx1024M -XX:ParallelGCThreads=1\" BaseRecalibrator -R ${inputs.reference} -I ${inputs.input_bam} --use-original-qualities -O ${inputs.sample_name}.recal.table --known-sites ${inputs.known_sites[0]} --known-sites ${inputs.dbsnp_vcf}"
+    "gatk --java-options \"-Xmx1024M -XX:ParallelGCThreads=1\" BaseRecalibrator --use-original-qualities -I ${inputs.input_bam} -R ${inputs.reference} --known-sites ${inputs.dbsnp_vcf} -O ${inputs.sample_name}.recal.table"
     "quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0"
     { input_bam = "file"; input_bam_index = "file"; sample_name = "string"; reference = "file"; reference_dict = "file"; reference_fai = "file"; known_sites = "array"; dbsnp_vcf = "file"; }
     { recal_table = "${inputs.sample_name}.recal.table"; }

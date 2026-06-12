@@ -14,5 +14,4 @@
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
 set -e
-mkdir -p ${sample_name}
-gatk --java-options "-Xmx7168M" CollectReadCounts -I ${input_bam} -L ${intervals} --interval-merging-rule OVERLAPPING_ONLY -O ${sample_name}.read_counts.hdf5 --format HDF5
+gatk --java-options "-Xmx7G -XX:ParallelGCThreads=1" CollectReadCounts -L ${intervals} -I ${input_bam} -R ${reference} --format HDF5 --interval-merging-rule OVERLAPPING_ONLY -O ${sample_name}.read_counts.hdf5

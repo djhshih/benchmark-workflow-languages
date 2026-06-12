@@ -15,4 +15,4 @@
 
 set -e
 mkdir -p star_${sample_name}
-STAR --runMode alignReads --runThreadN ${cpu} --genomeDir ${reference_index_dir} --readFilesIn ${reads[0]} ${reads[1]} --readFilesCommand zcat --outFileNamePrefix star_${sample_name}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:${sample_name} LB:${sample_name} PL:ILLUMINA SM:${sample_name}
+STAR --runMode alignReads --genomeDir ${reference_index_dir} --readFilesIn ${reads[0]} ${reads[1]} --readFilesCommand zcat --runThreadN ${cpu} --outFileNamePrefix star_${sample_name}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:${sample_name} LB:${sample_name} PL:ILLUMINA SM:${sample_name}

@@ -3,7 +3,7 @@
 #   input_bam file
 #   input_bam_index file
 #   reference file
-#   intervals file
+#   sites file
 #   sample_name str
 # out
 #   allelic_counts file = ${sample_name}.allelic_counts.tsv
@@ -14,5 +14,4 @@
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
 set -e
-mkdir -p ${sample_name}
-gatk --java-options "-Xmx7168M" CollectAllelicCounts -I ${input_bam} -L ${intervals} -R ${reference} -O ${sample_name}.allelic_counts.tsv
+gatk --java-options "-Xmx10G -XX:ParallelGCThreads=1" CollectAllelicCounts -L ${sites} -I ${input_bam} -R ${reference} -O ${sample_name}.allelic_counts.tsv

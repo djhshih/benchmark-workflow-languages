@@ -30,8 +30,7 @@ process TRIMMOMATIC {
         ${sample}_R2.trimmed.fastq.gz ${sample}_R2.unpaired.fastq.gz \
         ILLUMINACLIP:${adapters}:2:30:10 \
         LEADING:3 TRAILING:3 \
-        SLIDINGWINDOW:4:15 MINLEN:36 \
-        2> ${sample}.trimmomatic.log
+        SLIDINGWINDOW:4:15 MINLEN:36
     """
 }
 
@@ -53,16 +52,16 @@ process STAR_ALIGN {
     """
     mkdir -p star_${sample}
     STAR --runMode alignReads \
-        --runThreadN ${task.cpus} \
         --genomeDir ${reference_index} \
         --readFilesIn ${reads[0]} ${reads[1]} \
         --readFilesCommand zcat \
+        --runThreadN ${task.cpus} \
         --outFileNamePrefix star_${sample}/ \
         --outSAMtype BAM SortedByCoordinate \
         --outBAMcompression 1 \
         --outSAMunmapped Within KeepPairs \
-        --outSAMattrRGline ID:${sample} LB:1 PL:ILLUMINA SM:${sample} \
-        --twopassMode Basic
+        --twopassMode Basic \
+        --outSAMattrRGline ID:${sample} LB:${sample} PL:ILLUMINA SM:${sample}
     """
 }
 
@@ -83,8 +82,8 @@ process FASTQC {
     """
     mkdir -p fastqc_${sample}
     fastqc \
-        --threads ${task.cpus} \
         --outdir fastqc_${sample} \
+        --threads ${task.cpus} \
         ${reads[0]} ${reads[1]}
     """
 }
@@ -109,8 +108,8 @@ process FEATURECOUNTS {
     featureCounts \
         -T ${task.cpus} \
         -a ${annotation} \
-        -o ${sample}_counts.txt \
         -s ${strandedness} \
+        -o ${sample}_counts.txt \
         ${bam}
     """
 }

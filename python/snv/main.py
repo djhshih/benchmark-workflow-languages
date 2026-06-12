@@ -45,7 +45,7 @@ TOOLS = {
     ),
     "mark_duplicates": Tool(
         name="mark_duplicates",
-        base_command='picard -Xmx6656M -XX:ParallelGCThreads=1 MarkDuplicates INPUT={input_bam} OUTPUT={sample}.deduped.bam METRICS_FILE={sample}.deduped.metrics.txt CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 CLEAR_DT=false',
+        base_command='picard MarkDuplicates INPUT={input_bam} OUTPUT={sample}.deduped.bam METRICS_FILE={sample}.deduped.metrics.txt CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 CLEAR_DT=false',
         docker_image=PICARD_DOCKER,
         inputs={"input_bam": "File", "input_bam_index": "File", "sample_name": "string"},
         outputs={"deduped_bam": "{sample}.deduped.bam", "deduped_bam_index": "{sample}.deduped.bai", "metrics": "{sample}.deduped.metrics.txt"},
@@ -53,7 +53,7 @@ TOOLS = {
     ),
     "base_recalibrator": Tool(
         name="base_recalibrator",
-        base_command='gatk --java-options "-Xmx1024M -XX:ParallelGCThreads=1" BaseRecalibrator -R {ref} -I {bam} --use-original-qualities -O {sample}.recal.table --known-sites {sites_0} --known-sites {dbsnp}',
+        base_command='gatk --java-options "-Xmx1024M -XX:ParallelGCThreads=1" BaseRecalibrator --use-original-qualities -I {bam} -R {ref} --known-sites {dbsnp} -O {sample}.recal.table',
         docker_image=GATK_DOCKER,
         inputs={"input_bam": "File", "input_bam_index": "File", "sample_name": "string", "reference": "File", "reference_dict": "File", "reference_fai": "File", "known_sites": "array", "known_sites_indices": "array", "dbsnp_vcf": "File", "dbsnp_vcf_index": "File"},
         outputs={"recal_table": "{sample}.recal.table"},

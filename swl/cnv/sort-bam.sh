@@ -12,5 +12,4 @@
 #   image = quay.io/biocontainers/samtools:1.21--h96c455f_1
 
 set -e
-samtools sort -@ ${cpu} -m 4G -o ${sample_name}.coordinate_sorted.bam -T ${sample_name}.tmp ${input_bam}
-samtools index ${sample_name}.coordinate_sorted.bam
+samtools sort -@ ${cpu} -m 4G -o ${sample_name}.coordinate_sorted.bam -T ${sample_name}.tmp ${input_bam} && samtools index ${sample_name}.coordinate_sorted.bam

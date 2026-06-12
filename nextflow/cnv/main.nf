@@ -20,11 +20,46 @@ process BWA_MEM {
         path reference
 
     output:
-        tuple val(sample), path("${sample}.coordinate_sorted.bam"), path("${sample}.coordinate_sorted.bam.bai"), emit: alignment
+        tuple val(sample), path("${sample}.sorted.bam"), path("${sample}.bwa.log"), emit: alignment
 
     """
-    bwa mem -t ${task.cpus} -R "@RG\\tID:${sample}\\tLB:1\\tPL:ILLUMINA\\tSM:${sample}" ${reference} ${reads[0]} ${reads[1]} 2> ${sample}.bwa.log | samtools sort -@ ${task.cpus - 1} -m 2G -o ${sample}.coordinate_sorted.bam -
-    samtools index ${sample}.coordinate_sorted.bam
+    bwa mem -t ${task.cpus} -R "@RG\\tID:${sample}\\tLB:1\\tPL:ILLUMINA\\tSM:${sample}" ${reference} ${reads[0]} ${reads[1]} 2> ${sample}.bwa.log | samtools sort -@ ${task.cpus - 1} -m 2G -o ${sample}.sorted.bam - && samtools index ${sample}.sorted.bam
+    """
+}
+
+process SORT_BAM {
+    container 'quay.io/biocontainers/samtools:1.21--h96c455f_1'
+    publishDir "${params.outdir}/sort", mode: 'copy'
+    cpus 4
+    memory '8 GB'
+    disk '10 GB'
+
+    input:
+        tuple val(sample), path(bam)
+
+    output:
+        tuple val(sample), path("${sample}.coordinate_sorted.bam"), emit: sorted
+
+    """
+    samtools sort -@ ${task.cpus} -m 4G -o ${sample}.coordinate_sorted.bam -T ${sample}.tmp ${bam} && samtools index ${sample}.coordinate_sorted.bam
+    """
+}
+
+process INDEX_BAM {
+    container 'quay.io/biocontainers/samtools:1.21--h96c455f_1'
+    publishDir "${params.outdir}/index", mode: 'copy'
+    cpus 1
+    memory '2 GB'
+    disk '2 GB'
+
+    input:
+        tuple val(sample), path(bam)
+
+    output:
+        tuple val(sample), path("${bam}"), path("${bam}.bai"), emit: indexed
+
+    """
+    samtools index ${bam}
     """
 }
 
@@ -38,7 +73,6 @@ process COLLECT_ALLELIC_COUNTS {
     input:
         tuple val(sample), path(bam), path(bai)
         path reference
-        path intervals
         path common_sites
         path common_sites_index
 
@@ -46,12 +80,7 @@ process COLLECT_ALLELIC_COUNTS {
         tuple val(sample), path("${sample}.allelic_counts.tsv"), emit: allelic_counts
 
     """
-    gatk --java-options '-Xmx10G -XX:ParallelGCThreads=1' CollectAllelicCounts \
-        -I ${bam} \
-        -R ${reference} \
-        -L ${intervals} \
-        -OVC ${common_sites} \
-        -O ${sample}.allelic_counts.tsv
+    gatk --java-options '-Xmx10G -XX:ParallelGCThreads=1' CollectAllelicCounts -L ${common_sites} -I ${bam} -R ${reference} -O ${sample}.allelic_counts.tsv
     """
 }
 
@@ -157,14 +186,15 @@ workflow {
     pon_file = params.pon ? file(params.pon) : []
 
     BWA_MEM(reads_ch, reference)
+    SORT_BAM(BWA_MEM.out.alignment)
+    INDEX_BAM(SORT_BAM.out.sorted)
 
-    BWA_MEM.out.alignment
+    INDEX_BAM.out.indexed
         .set { bam_with_index }
 
     COLLECT_ALLELIC_COUNTS(
         bam_with_index,
         reference,
-        intervals,
         common_sites,
         common_sites_index
     )

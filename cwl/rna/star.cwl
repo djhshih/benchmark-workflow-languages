@@ -13,9 +13,6 @@ inputs:
   reads:
     type: array
     items: File
-    inputBinding:
-      prefix: --readFilesIn
-      itemSeparator: " "
   reference_index_dir: Directory
   reference_fasta: File
 outputs:
@@ -30,9 +27,12 @@ outputs:
 baseCommand: [STAR]
 arguments:
   - --runMode=alignReads
-  - valueFrom: --runThreadN=$(runtime.cores)
   - valueFrom: --genomeDir=$(inputs.reference_index_dir)
+  - --readFilesIn
+  - valueFrom: $(inputs.reads[0])
+  - valueFrom: $(inputs.reads[1])
   - --readFilesCommand=zcat
+  - valueFrom: --runThreadN=$(runtime.cores)
   - valueFrom: --outFileNamePrefix=star_$(inputs.sample_name)/
   - --outSAMtype
   - BAM

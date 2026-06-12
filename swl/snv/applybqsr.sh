@@ -17,6 +17,4 @@
 #   disk = 10240
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
-set -e
-mkdir -p ${sample_name}
 gatk --java-options "-Xmx2048M -XX:ParallelGCThreads=1" ApplyBQSR --create-output-bam-md5 --add-output-sam-program-record -R ${reference} -I ${input_bam} --use-original-qualities -O ${sample_name}.recalibrated.bam -bqsr ${recal_table} --static-quantized-quals 10 --static-quantized-quals 20 --static-quantized-quals 30

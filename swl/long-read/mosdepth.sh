@@ -13,5 +13,4 @@
 #   image = quay.io/biocontainers/mosdepth:0.3.10--h4e814b3_1
 
 set -e
-mkdir -p ${sample_name}
 mosdepth --threads ${cpu} --no-per-base ${sample_name}.mosdepth ${bam}

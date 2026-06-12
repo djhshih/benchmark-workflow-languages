@@ -41,7 +41,7 @@ TOOLS = {
     ),
     "star": Tool(
         name="star",
-        base_command='STAR --runMode alignReads --runThreadN {cpu} --genomeDir {index_dir} --readFilesIn {reads_0} {reads_1} --readFilesCommand zcat --outFileNamePrefix star_{sample}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:{sample} LB:{sample} PL:ILLUMINA SM:{sample}',
+        base_command='mkdir -p star_{sample} && STAR --runMode alignReads --genomeDir {index_dir} --readFilesIn {reads_0} {reads_1} --readFilesCommand zcat --runThreadN {cpu} --outFileNamePrefix star_{sample}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:{sample} LB:{sample} PL:ILLUMINA SM:{sample}',
         docker_image="quay.io/biocontainers/star:2.7.3a--0",
         inputs={"sample_name": "string", "reads": "array", "reference_index": "Directory", "reference_fasta": "File"},
         outputs={"alignment_bam": "star_{sample}/Aligned.sortedByCoord.out.bam", "alignment_log": "star_{sample}/Log.final.out", "sj_tab": "star_{sample}/SJ.out.tab"},
@@ -49,7 +49,7 @@ TOOLS = {
     ),
     "fastqc": Tool(
         name="fastqc",
-        base_command='fastqc --outdir fastqc_{sample} --threads {cpu} {trimmed_r1} {trimmed_r2}',
+        base_command='mkdir -p fastqc_{sample} && fastqc --outdir fastqc_{sample} --threads {cpu} {trimmed_r1} {trimmed_r2}',
         docker_image="quay.io/biocontainers/fastqc:0.11.9--0",
         inputs={"sample_name": "string", "trimmed_r1": "File", "trimmed_r2": "File"},
         outputs={"html_report_r1": "fastqc_{sample}/{sample}_R1.trimmed_fastqc.html", "html_report_r2": "fastqc_{sample}/{sample}_R2.trimmed_fastqc.html", "zip_report_r1": "fastqc_{sample}/{sample}_R1.trimmed_fastqc.zip", "zip_report_r2": "fastqc_{sample}/{sample}_R2.trimmed_fastqc.zip"},

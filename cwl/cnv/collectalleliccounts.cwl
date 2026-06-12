@@ -5,25 +5,17 @@ requirements:
   DockerRequirement:
     dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
   ResourceRequirement:
-    coresMin: 2
-    ramMin: 4096
+    coresMin: 4
+    ramMin: 11264
     diskMb: 5120
 inputs:
   sample_name: string
   bam:
     type: File
-    inputBinding:
-      prefix: -I
   bam_index: File
-  reference:
-    type: File
-    inputBinding:
-      prefix: -R
+  reference: File
   reference_fai: File
-  common_variant_sites:
-    type: File
-    inputBinding:
-      prefix: -L
+  common_variant_sites: File
   common_variant_sites_index:
     type:
       - "null"
@@ -33,11 +25,13 @@ outputs:
     type: File
     outputBinding:
       glob: "*.allelic_counts.tsv"
-baseCommand: [gatk]
+baseCommand: ["bash"]
 arguments:
-  - --java-options
-  - -Xmx10G
-  - -XX:ParallelGCThreads=1
-  - CollectAllelicCounts
-  - -O
-  - valueFrom: $(inputs.sample_name).allelic_counts.tsv
+  - valueFrom: >-
+      gatk --java-options '-Xmx10G -XX:ParallelGCThreads=1'
+      CollectAllelicCounts
+      -L $(inputs.common_variant_sites)
+      -I $(inputs.bam)
+      -R $(inputs.reference)
+      -O $(inputs.sample_name).allelic_counts.tsv
+    shellQuote: false

@@ -18,10 +18,6 @@ inputs:
     type:
       - "null"
       - File
-  annotated_intervals:
-    type:
-      - "null"
-      - File
 outputs:
   alignment_bam:
     type: File
@@ -94,7 +90,6 @@ steps:
       sample_name: sample_name
       read_counts: collect_read_counts/read_counts
       pon: pon
-      annotated_intervals: annotated_intervals
     out: [denoised_copy_ratios, standardized_copy_ratios]
   model_segments:
     run: segmentcnv.cwl

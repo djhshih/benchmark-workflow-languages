@@ -12,5 +12,4 @@
 #   image = quay.io/biocontainers/bcftools:1.10.2--h4f4756c_2
 
 set -e
-mkdir -p ${sample_name}
 bcftools stats ${input_vcf} > ${sample_name}.vcf.stats

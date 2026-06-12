@@ -5,8 +5,8 @@ requirements:
   DockerRequirement:
     dockerPull: quay.io/biocontainers/samtools:1.21--h96c455f_1
   ResourceRequirement:
-    coresMin: 2
-    ramMin: 4096
+    coresMin: 4
+    ramMin: 8192
     diskMb: 10240
 inputs:
   sample_name: string
@@ -16,14 +16,14 @@ outputs:
     type: File
     outputBinding:
       glob: "*.coordinate_sorted.bam"
-baseCommand: [samtools, sort]
+  coordinate_sorted_bam_index:
+    type: File
+    outputBinding:
+      glob: "*.coordinate_sorted.bam.bai"
+baseCommand: ["bash"]
 arguments:
-  - -@
-  - valueFrom: $(runtime.cores)
-  - -m
-  - 4G
-  - -T
-  - valueFrom: $(inputs.sample_name).tmp
-  - -o
-  - valueFrom: $(inputs.sample_name).coordinate_sorted.bam
-  - valueFrom: $(inputs.alignment)
+  - valueFrom: >-
+      samtools sort -@ $(runtime.cores) -m 4G -o $(inputs.sample_name).coordinate_sorted.bam
+      -T $(inputs.sample_name).tmp $(inputs.alignment) &&
+      samtools index $(inputs.sample_name).coordinate_sorted.bam
+    shellQuote: false

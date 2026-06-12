@@ -11,7 +11,7 @@ let
     { cpu = 2; memory = 4096; disk = 5120; };
 
   star = Task "star"
-    "mkdir -p star_${inputs.sample_name} && STAR --runMode alignReads --runThreadN ${to_string resources.cpu} --genomeDir ${inputs.reference_index} --readFilesIn ${inputs.r1} ${inputs.r2} --readFilesCommand zcat --outFileNamePrefix star_${inputs.sample_name}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:${inputs.sample_name} LB:${inputs.sample_name} PL:ILLUMINA SM:${inputs.sample_name}"
+    "mkdir -p star_${inputs.sample_name} && STAR --runMode alignReads --genomeDir ${inputs.reference_index} --readFilesIn ${inputs.r1} ${inputs.r2} --readFilesCommand zcat --runThreadN ${to_string resources.cpu} --outFileNamePrefix star_${inputs.sample_name}/ --outSAMtype BAM SortedByCoordinate --outBAMcompression 1 --outSAMunmapped Within KeepPairs --twopassMode Basic --outSAMattrRGline ID:${inputs.sample_name} LB:${inputs.sample_name} PL:ILLUMINA SM:${inputs.sample_name}"
     "quay.io/biocontainers/star:2.7.3a--0"
     { sample_name = "string"; r1 = "file"; r2 = "file"; reference_index = "directory"; }
     { alignment_bam = "star_${inputs.sample_name}/Aligned.sortedByCoord.out.bam"; log_final = "star_${inputs.sample_name}/Log.final.out"; }

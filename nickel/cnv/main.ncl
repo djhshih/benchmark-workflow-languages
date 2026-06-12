@@ -4,14 +4,14 @@ let
   };
 
   bwa_mem = Task "bwa_mem"
-    "bwa mem -t ${to_string resources.cpu} -R \"@RG\\tID:${inputs.sample_name}\\tLB:1\\tPL:ILLUMINA\\tSM:${inputs.sample_name}\" ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]} 2> ${inputs.sample_name}.bwa.log | samtools sort -@ ${to_string (resources.cpu - 1)} -m 2G -o ${inputs.sample_name}.sorted.bam - ; samtools index ${inputs.sample_name}.sorted.bam"
+    "bwa mem -t ${to_string resources.cpu} -R \"@RG\\tID:${inputs.sample_name}\\tLB:1\\tPL:ILLUMINA\\tSM:${inputs.sample_name}\" ${inputs.reference} ${inputs.reads[0]} ${inputs.reads[1]} 2> ${inputs.sample_name}.bwa.log | samtools sort -@ ${to_string (resources.cpu - 1)} -m 2G -o ${inputs.sample_name}.sorted.bam - && samtools index ${inputs.sample_name}.sorted.bam"
     "quay.io/biocontainers/mulled-v2-ad317f19f5881324e963f6a6d464d696a2825ab6:c59b7a73c87a9fe81737d5d628e10a3b5807f453-0"
     { sample_name = "string"; reads = "array"; reference = "file"; }
     { output_bam = "${inputs.sample_name}.sorted.bam"; output_bam_index = "${inputs.sample_name}.sorted.bam.bai"; bwa_log = "${inputs.sample_name}.bwa.log"; }
     { cpu = 4; memory = 8192; disk = 10240; };
 
   sort_bam = Task "sort_bam"
-    "samtools sort -@ ${to_string resources.cpu} -m 4G -o ${inputs.sample_name}.coordinate_sorted.bam -T ${inputs.sample_name}.tmp ${inputs.input_bam} ; samtools index ${inputs.sample_name}.coordinate_sorted.bam"
+    "samtools sort -@ ${to_string resources.cpu} -m 4G -o ${inputs.sample_name}.coordinate_sorted.bam -T ${inputs.sample_name}.tmp ${inputs.input_bam} && samtools index ${inputs.sample_name}.coordinate_sorted.bam"
     "quay.io/biocontainers/samtools:1.21--h96c455f_1"
     { input_bam = "file"; sample_name = "string"; }
     { sorted_bam = "${inputs.sample_name}.coordinate_sorted.bam"; sorted_bam_index = "${inputs.sample_name}.coordinate_sorted.bam.bai"; }

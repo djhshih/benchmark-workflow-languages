@@ -6,14 +6,12 @@ requirements:
     dockerPull: quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
   ResourceRequirement:
     coresMin: 2
-    ramMin: 4096
+    ramMin: 3072
     diskMb: 2048
 inputs:
   sample_name: string
   segments:
     type: File
-    inputBinding:
-      prefix: -I
 outputs:
   called_segments:
     type: File
@@ -23,12 +21,11 @@ outputs:
     type: File
     outputBinding:
       glob: "*.called.igv.seg"
-baseCommand: [gatk]
+baseCommand: ["bash"]
 arguments:
-  - --java-options
-  - -Xmx2G
-  - -XX:ParallelGCThreads=1
-  - CallCopyRatioSegments
-  - valueFrom: --output-prefix=$(inputs.sample_name)
-  - -O
-  - ./
+  - valueFrom: >-
+      gatk --java-options '-Xmx2G -XX:ParallelGCThreads=1'
+      CallCopyRatioSegments
+      -I $(inputs.segments)
+      -O $(inputs.sample_name).called.seg
+    shellQuote: false

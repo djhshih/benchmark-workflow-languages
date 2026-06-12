@@ -12,5 +12,4 @@
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
 set -e
-mkdir -p ${sample_name}
-gatk --java-options "-Xmx3072M" CallCopyRatioSegments --segments ${segments} -O ${sample_name}.called.seg
+gatk --java-options "-Xmx2G -XX:ParallelGCThreads=1" CallCopyRatioSegments -I ${segments} -O ${sample_name}.called.seg

@@ -9,16 +9,10 @@ requirements:
     ramMin: 4608
     diskMb: 10240
 inputs:
-  input_bam:
-    type: File
-    inputBinding:
-      prefix: -I
+  input_bam: File
   input_bam_index: File
   sample_name: string
-  reference:
-    type: File
-    inputBinding:
-      prefix: -R
+  reference: File
   reference_dict: File
   reference_fai: File
 outputs:
@@ -30,12 +24,10 @@ outputs:
     type: File
     outputBinding:
       glob: "*.g.vcf.gz.tbi"
-baseCommand: [gatk]
+baseCommand: ["bash"]
 arguments:
-  - --java-options
-  - -Xmx4096M
-  - -XX:ParallelGCThreads=1
-  - HaplotypeCaller
-  - -O
-  - valueFrom: $(inputs.sample_name).g.vcf.gz
-  - --emit-ref-confidence=GVCF
+  - valueFrom: >-
+      gatk --java-options '-Xmx4096M -XX:ParallelGCThreads=1' HaplotypeCaller
+      -R $(inputs.reference) -I $(inputs.input_bam) -O $(inputs.sample_name).g.vcf.gz
+      --emit-ref-confidence GVCF
+    shellQuote: false

@@ -25,8 +25,7 @@ process BWA_MEM {
         tuple val(sample), path("${sample}.sorted.bam"), path("${sample}.sorted.bam.bai"), emit: alignment
 
     """
-    bwa mem -t ${task.cpus} -R "@RG\\tID:${sample}\\tLB:1\\tPL:ILLUMINA\\tSM:${sample}" ${reference} ${reads[0]} ${reads[1]} 2> ${sample}.bwa.log | samtools sort -@ ${task.cpus - 1} -m 2G -o ${sample}.sorted.bam -
-    samtools index ${sample}.sorted.bam
+    bwa mem -t ${task.cpus} -R "@RG\\tID:${sample}\\tLB:1\\tPL:ILLUMINA\\tSM:${sample}" ${reference} ${reads[0]} ${reads[1]} 2> ${sample}.bwa.log | samtools sort -@ ${task.cpus - 1} -m 2G -o ${sample}.sorted.bam - && samtools index ${sample}.sorted.bam
     """
 }
 
@@ -45,14 +44,13 @@ process MARK_DUPLICATES {
 
     """
     picard MarkDuplicates \
-        -I ${bam} \
-        -O ${sample}.deduped.bam \
-        -M ${sample}.deduped.metrics.txt \
-        --CREATE_INDEX true \
-        --VALIDATION_STRINGENCY SILENT \
-        --OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 \
-        --CLEAR_DT false \
-        --ADD_PG_TAG_TO_READS false
+        INPUT=${bam} \
+        OUTPUT=${sample}.deduped.bam \
+        METRICS_FILE=${sample}.deduped.metrics.txt \
+        CREATE_INDEX=true \
+        VALIDATION_STRINGENCY=SILENT \
+        OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500 \
+        CLEAR_DT=false
     """
 }
 
@@ -66,20 +64,18 @@ process BASE_RECALIBRATOR {
     input:
         tuple val(sample), path(bam), path(bai)
         path reference
-        path known_vcfs
-        path known_indices
+        path dbsnp_vcf
+        path dbsnp_vcf_index
 
     output:
         tuple val(sample), path("${sample}.recal.table"), emit: recal_table
 
-    script:
-    def known_sites_args = known_vcfs.collect { "--known-sites $it" }.join(' ')
     """
     gatk --java-options '-Xmx1024M -XX:ParallelGCThreads=1' BaseRecalibrator \
+        --use-original-qualities \
         -I ${bam} \
         -R ${reference} \
-        ${known_sites_args} \
-        --use-original-qualities \
+        --known-sites ${dbsnp_vcf} \
         -O ${sample}.recal.table
     """
 }
@@ -100,16 +96,16 @@ process APPLY_BQSR {
 
     """
     gatk --java-options '-Xmx2048M -XX:ParallelGCThreads=1' ApplyBQSR \
-        -I ${bam} \
+        --create-output-bam-md5 \
+        --add-output-sam-program-record \
         -R ${reference} \
-        --bqsr-recal-file ${recal_table} \
+        -I ${bam} \
+        --use-original-qualities \
+        -O ${sample}.recalibrated.bam \
+        -bqsr ${recal_table} \
         --static-quantized-quals 10 \
         --static-quantized-quals 20 \
-        --static-quantized-quals 30 \
-        --use-original-qualities \
-        --add-output-sam-program-record \
-        --create-output-bam-md5 \
-        -O ${sample}.recalibrated.bam
+        --static-quantized-quals 30
     """
 }
 
@@ -131,10 +127,10 @@ process HAPLOTYPE_CALLER {
 
     """
     gatk --java-options '-Xmx4096M -XX:ParallelGCThreads=1' HaplotypeCaller \
-        -I ${bam} \
         -R ${reference} \
+        -I ${bam} \
         -O ${sample}.g.vcf.gz \
-        -ERC GVCF
+        --emit-ref-confidence GVCF
     """
 }
 
@@ -156,14 +152,13 @@ process VARIANT_FILTER {
 
     """
     gatk --java-options '-Xmx8192M -XX:ParallelGCThreads=1' VariantRecalibrator \
-        -V ${vcf} \
         -R ${reference} \
-        -resource:dbsnp,known=false,training=true,truth=true,prior=15.0 ${dbsnp_vcf} \
-        --output ${sample}.variant_filter.vcf.gz \
+        -V ${vcf} \
+        --resource:dbsnp,known=false,training=true,truth=true,prior=15.0 ${dbsnp_vcf} \
+        -O ${sample}.variant_filter.vcf.gz \
         --tranches-file ${sample}.tranches \
         --rscript-file ${sample}.plots.R \
         --tranche 100.0 --tranche 99.9 --tranche 99.0 --tranche 90.0 \
-        -an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR \
         --max-gaussians 4
     """
 }
@@ -186,8 +181,8 @@ workflow {
             tuple(sample, bam, bai)
         },
         reference,
-        known_sites_files,
-        known_sites_indices_files
+        dbsnp_vcf_file,
+        dbsnp_vcf_index_file
     )
 
     MARK_DUPLICATES.out.deduped

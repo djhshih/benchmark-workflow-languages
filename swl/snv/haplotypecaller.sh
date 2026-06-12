@@ -15,6 +15,4 @@
 #   disk = 10240
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
-set -e
-mkdir -p ${sample_name}
 gatk --java-options "-Xmx4096M -XX:ParallelGCThreads=1" HaplotypeCaller -R ${reference} -I ${input_bam} -O ${sample_name}.g.vcf.gz --emit-ref-confidence GVCF

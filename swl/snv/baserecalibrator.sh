@@ -16,6 +16,4 @@
 #   disk = 5120
 #   image = quay.io/biocontainers/gatk4:4.1.8.0--py38h37ae868_0
 
-set -e
-mkdir -p ${sample_name}
-gatk --java-options "-Xmx1024M -XX:ParallelGCThreads=1" BaseRecalibrator -R ${reference} -I ${input_bam} --use-original-qualities -O ${sample_name}.recal.table --known-sites ${known_sites[0]} --known-sites ${dbsnp_vcf}
+gatk --java-options "-Xmx1024M -XX:ParallelGCThreads=1" BaseRecalibrator --use-original-qualities -I ${input_bam} -R ${reference} --known-sites ${dbsnp_vcf} -O ${sample_name}.recal.table
